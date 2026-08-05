@@ -80,6 +80,13 @@ export function createApp({
     response.status(200).json({ ok: true });
   });
 
+  app.get(`${PUBLIC_BASE_PATH}/assets/finance-wechat-qr.png`, (_request, response) => {
+    response
+      .set("Cache-Control", "public, max-age=3600")
+      .set("X-Content-Type-Options", "nosniff")
+      .sendFile(path.join(staticDir, "assets", "finance-wechat-qr.png"));
+  });
+
   for (const storeKey of ALLOWED_STORE_KEYS) {
     app.get(
       [`${PUBLIC_BASE_PATH}/${storeKey}`, `${PUBLIC_BASE_PATH}/${storeKey}/`],

@@ -5,6 +5,7 @@ import {
 import { insertAttachmentVersion, insertRevision } from "./repository.js";
 
 export const ALLOWED_STORE_KEYS = new Set(["fuzzy", "fuzzy_qz", "peanut"]);
+export const ALLOWED_POSITIONS = new Set(["front_of_house", "back_of_house"]);
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 
 export class SubmissionValidationError extends Error {
@@ -24,6 +25,7 @@ export function normalizeEmployeePayload(body = {}, storeKey = "") {
   return {
     name: normalizeString(body.name),
     phone: normalizeString(body.phone),
+    position: normalizeString(body.position),
     storeKey: normalizeString(storeKey || body.storeKey || body.store_key),
   };
 }
@@ -37,6 +39,9 @@ export function validateEmployeePayload(payload) {
   }
   if (!PHONE_PATTERN.test(payload.phone)) {
     throw new SubmissionValidationError("请输入有效的中国大陆 11 位手机号。", "phone");
+  }
+  if (!ALLOWED_POSITIONS.has(payload.position)) {
+    throw new SubmissionValidationError("请选择岗位。", "position");
   }
   if (!ALLOWED_STORE_KEYS.has(payload.storeKey)) {
     throw new SubmissionValidationError("门店链接无效，请使用门店提供的专属链接。", "storeKey");
@@ -118,12 +123,13 @@ export async function createEmployeeSubmission({
     db.transaction(() => {
       db.prepare(
         `INSERT INTO employee_submissions (
-          id, name, phone, store_key, current_version, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 0, ?, ?)`
+          id, name, phone, position, store_key, current_version, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, 0, ?, ?)`
       ).run(
         submissionId,
         payload.name,
         payload.phone,
+        payload.position,
         payload.storeKey,
         createdAt,
         createdAt

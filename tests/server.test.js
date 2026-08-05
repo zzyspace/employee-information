@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import http from "node:http";
+import Database from "better-sqlite3";
 
 import { createApp } from "../server/app.js";
 import { MAX_FILE_BYTES } from "../server/config.js";
@@ -85,6 +86,7 @@ function makeFile(bytes, name, type) {
 function validFormData({
   name = "张三",
   phone = "13800000000",
+  position = "front_of_house",
   front = makeFile(jpegBytes(), "front.jpg", "image/jpeg"),
   back = makeFile(pngBytes(), "back.png", "image/png"),
   health = null,
@@ -92,6 +94,7 @@ function validFormData({
   const data = new FormData();
   data.set("name", name);
   data.set("phone", phone);
+  data.set("position", position);
   data.set("idCardFront", front);
   data.set("idCardBack", back);
   if (health) data.set("healthCertificate", health);
@@ -117,6 +120,46 @@ function listStoredFiles(root) {
     .map((entry) => entry.name);
 }
 
+test("database migration adds position columns without fabricating legacy values", () => {
+  const tempDir = createTempDirectory();
+  const dbFilePath = path.join(tempDir, "data", "app.db");
+  fs.mkdirSync(path.dirname(dbFilePath), { recursive: true });
+  const initSqlPath = path.join(projectRoot, "db", "init.sql");
+  const legacySchema = fs
+    .readFileSync(initSqlPath, "utf8")
+    .replaceAll(
+      "  position TEXT CHECK (position IN ('front_of_house', 'back_of_house')),\n",
+      ""
+    );
+  const legacyDb = new Database(dbFilePath);
+  legacyDb.exec(legacySchema);
+  legacyDb
+    .prepare(
+      `INSERT INTO employee_submissions (
+        id, name, phone, store_key, current_version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 0, ?, ?)`
+    )
+    .run("legacy-id", "旧员工", "13800000000", "fuzzy", "2026-01-01", "2026-01-01");
+  legacyDb.close();
+
+  const migratedDb = createDatabase({ dbFilePath, dbInitSqlPath: initSqlPath });
+  try {
+    assert.ok(
+      migratedDb.prepare("PRAGMA table_info(employee_submissions)").all().some((column) => column.name === "position")
+    );
+    assert.ok(
+      migratedDb.prepare("PRAGMA table_info(employee_submission_revisions)").all().some((column) => column.name === "position")
+    );
+    assert.equal(
+      migratedDb.prepare("SELECT position FROM employee_submissions WHERE id = ?").get("legacy-id").position,
+      null
+    );
+  } finally {
+    migratedDb.close();
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("only the three store routes expose the form and portal requires auth", async () => {
   const harness = createHarness();
   try {
@@ -136,6 +179,12 @@ test("only the three store routes expose the form and portal requires auth", asy
       const health = await fetch(`${baseUrl}/employee/healthz`);
       assert.equal(health.status, 200);
       assert.deepEqual(await health.json(), { ok: true });
+
+      const qrCode = await fetch(`${baseUrl}/employee/assets/finance-wechat-qr.png`);
+      assert.equal(qrCode.status, 200);
+      assert.equal(qrCode.headers.get("content-type"), "image/png");
+      assert.equal(qrCode.headers.get("x-content-type-options"), "nosniff");
+      assert.ok((await qrCode.arrayBuffer()).byteLength > 0);
 
       assert.equal((await fetch(`${baseUrl}/employee/portal`)).status, 401);
       assert.equal(
@@ -202,6 +251,14 @@ test("name phone store and required document validation returns field errors", a
       const invalidPhone = await submit(baseUrl, { phone: "123" });
       assert.equal(invalidPhone.status, 400);
       assert.equal((await invalidPhone.json()).error.field, "phone");
+
+      const missingPosition = await submit(baseUrl, { position: "" });
+      assert.equal(missingPosition.status, 400);
+      assert.equal((await missingPosition.json()).error.field, "position");
+
+      const invalidPosition = await submit(baseUrl, { position: "office" });
+      assert.equal(invalidPosition.status, 400);
+      assert.equal((await invalidPosition.json()).error.field, "position");
 
       const missingBackData = validFormData();
       missingBackData.delete("idCardBack");
@@ -309,6 +366,7 @@ test("editing creates immutable field and attachment history, including removed 
       const updateData = new FormData();
       updateData.set("name", "李四");
       updateData.set("phone", "13900000000");
+      updateData.set("position", "back_of_house");
       updateData.set("storeKey", "fuzzy_qz");
       updateData.set("idCardFront", makeFile(pdfBytes(), "new-front.pdf", "application/pdf"));
       const updated = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, {
@@ -317,11 +375,14 @@ test("editing creates immutable field and attachment history, including removed 
         body: updateData,
       });
       assert.equal(updated.status, 200);
-      assert.equal((await updated.json()).item.version, 2);
+      const updatedItem = (await updated.json()).item;
+      assert.equal(updatedItem.version, 2);
+      assert.equal(updatedItem.position, "back_of_house");
 
       const removeHealthData = new FormData();
       removeHealthData.set("name", "李四");
       removeHealthData.set("phone", "13900000000");
+      removeHealthData.set("position", "back_of_house");
       removeHealthData.set("storeKey", "fuzzy_qz");
       removeHealthData.set("removeHealthCertificate", "true");
       const removed = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, {
@@ -337,6 +398,7 @@ test("editing creates immutable field and attachment history, including removed 
       assert.equal(historyItems.length, 3);
       assert.deepEqual(historyItems.map((item) => item.action), ["updated", "updated", "created"]);
       assert.equal(historyItems[2].name, "张三");
+      assert.equal(historyItems[2].position, "front_of_house");
       assert.equal(historyItems[2].attachments.idCardFront.attachmentVersionId, oldFrontId);
       assert.equal(historyItems[2].attachments.healthCertificate.attachmentVersionId, oldHealthId);
 
@@ -375,6 +437,7 @@ test("soft deletion hides records, preserves files, blocks edits, and can restor
       const updateData = new FormData();
       updateData.set("name", "不能编辑");
       updateData.set("phone", "13800000000");
+      updateData.set("position", "front_of_house");
       updateData.set("storeKey", "fuzzy");
       const blockedEdit = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, { method: "PATCH", headers: authHeaders(), body: updateData });
       assert.equal(blockedEdit.status, 409);
@@ -409,7 +472,7 @@ test("uncommitted files are removed when database persistence fails", async () =
     await assert.rejects(
       () =>
         createEmployeeSubmission({
-          body: { name: "张三", phone: "13800000000" },
+          body: { name: "张三", phone: "13800000000", position: "front_of_house" },
           files: {
             idCardFront: [{ buffer: jpegBytes(), originalname: "front.jpg", mimetype: "image/jpeg", size: jpegBytes().length }],
             idCardBack: [{ buffer: pngBytes(), originalname: "back.png", mimetype: "image/png", size: pngBytes().length }],

@@ -130,6 +130,7 @@ export function getEmployeeSubmissionHistory(db, submissionId) {
     action: revision.action,
     name: revision.name,
     phone: revision.phone,
+    position: revision.position,
     storeKey: revision.store_key,
     changedAt: revision.changed_at,
     actorUsername: revision.actor_username,
@@ -192,6 +193,7 @@ export async function updateEmployeeSubmission({
   const hasFieldChange =
     payload.name !== existing.name ||
     payload.phone !== existing.phone ||
+    payload.position !== existing.position ||
     payload.storeKey !== existing.store_key;
   const hasAttachmentChange =
     Boolean(idCardFront || idCardBack || healthCertificate) ||
@@ -246,6 +248,7 @@ export async function updateEmployeeSubmission({
         SET
           name = ?,
           phone = ?,
+          position = ?,
           store_key = ?,
           current_id_card_front_attachment_id = ?,
           current_id_card_back_attachment_id = ?,
@@ -256,6 +259,7 @@ export async function updateEmployeeSubmission({
       ).run(
         payload.name,
         payload.phone,
+        payload.position,
         payload.storeKey,
         idCardFrontAttachmentId,
         idCardBackAttachmentId,
@@ -313,6 +317,7 @@ function changeDeletionState({ db, submissionId, actorUsername, now, action }) {
       action,
       name: existing.name,
       phone: existing.phone,
+      position: existing.position,
       storeKey: existing.store_key,
       idCardFrontAttachmentId: existing.current_id_card_front_attachment_id,
       idCardBackAttachmentId: existing.current_id_card_back_attachment_id,
