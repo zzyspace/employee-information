@@ -96,6 +96,8 @@ run_release() {
 
 if [[ "${SERVER}" == "local" || "${SERVER}" == "localhost" ]]; then
   run_release
+elif [[ -d "${APP_DIR}/.git" && "${SERVER}" == "${DEFAULT_SERVER}" ]]; then
+  run_release
 else
   ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=10 "${SERVER}" \
     "$(declare -f wait_for_http_ok); $(declare -f ensure_nginx_include); $(declare -f run_release); APP_DIR='${APP_DIR}'; DATA_ROOT='${DATA_ROOT}'; SERVICE_NAME='${SERVICE_NAME}'; SERVICE_USER='${SERVICE_USER}'; SYSTEMD_TARGET='${SYSTEMD_TARGET}'; NGINX_SITE='${NGINX_SITE}'; NGINX_SNIPPET='${NGINX_SNIPPET}'; NGINX_INCLUDE_LINE='${NGINX_INCLUDE_LINE}'; NODE_HEALTH='${NODE_HEALTH}'; WEB_HEALTH='${WEB_HEALTH}'; run_release"
