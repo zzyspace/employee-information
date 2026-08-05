@@ -14,6 +14,8 @@ NGINX_SNIPPET="/etc/nginx/snippets/employee-information.locations.conf"
 NGINX_INCLUDE_LINE="  include ${NGINX_SNIPPET};"
 NODE_HEALTH="http://127.0.0.1:8789/employee/healthz"
 WEB_HEALTH="http://127.0.0.1:8080/employee/healthz"
+GIT_PROXY_URL="${EMPLOYEE_INFORMATION_GIT_PROXY_URL:-http://127.0.0.1:7890}"
+GIT_PULL_TIMEOUT_SECONDS="${EMPLOYEE_INFORMATION_GIT_PULL_TIMEOUT_SECONDS:-60}"
 
 wait_for_http_ok() {
   local label="$1"
@@ -56,12 +58,29 @@ ensure_nginx_include() {
   rm -f "${rendered_path}"
 }
 
+run_git_pull() {
+  local status=0
+
+  HTTPS_PROXY="${GIT_PROXY_URL}" \
+  HTTP_PROXY="${GIT_PROXY_URL}" \
+  GIT_TERMINAL_PROMPT=0 \
+    timeout "${GIT_PULL_TIMEOUT_SECONDS}" \
+      git -C "${APP_DIR}" pull --ff-only --progress origin main || status=$?
+
+  if [[ "${status}" -eq 124 ]]; then
+    echo "[deploy] Git pull timed out after ${GIT_PULL_TIMEOUT_SECONDS}s via ${GIT_PROXY_URL}" >&2
+  elif [[ "${status}" -ne 0 ]]; then
+    echo "[deploy] Git pull failed with exit code ${status}" >&2
+  fi
+  return "${status}"
+}
+
 run_release() {
   if [[ "${EUID}" -ne 0 ]]; then
     echo "Run this deployment as root." >&2
     exit 1
   fi
-  for cmd in awk curl git install nginx node npm systemctl useradd; do
+  for cmd in awk curl git install nginx node npm systemctl timeout useradd; do
     command -v "${cmd}" >/dev/null 2>&1 || { echo "Missing command: ${cmd}" >&2; exit 1; }
   done
   [[ -d "${APP_DIR}/.git" ]] || { echo "Checkout missing: ${APP_DIR}" >&2; exit 1; }
@@ -74,7 +93,7 @@ run_release() {
   install -d -m 755 /etc/nginx/snippets
 
   echo "[deploy] Pulling origin/main"
-  GIT_TERMINAL_PROMPT=0 git -C "${APP_DIR}" pull --ff-only origin main
+  run_git_pull
   echo "[deploy] Installing dependencies and validating static pages"
   npm --prefix "${APP_DIR}" ci --omit=dev
   npm --prefix "${APP_DIR}" run build
@@ -100,5 +119,5 @@ elif [[ -d "${APP_DIR}/.git" && "${SERVER}" == "${DEFAULT_SERVER}" ]]; then
   run_release
 else
   ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=10 "${SERVER}" \
-    "$(declare -f wait_for_http_ok); $(declare -f ensure_nginx_include); $(declare -f run_release); APP_DIR='${APP_DIR}'; DATA_ROOT='${DATA_ROOT}'; SERVICE_NAME='${SERVICE_NAME}'; SERVICE_USER='${SERVICE_USER}'; SYSTEMD_TARGET='${SYSTEMD_TARGET}'; NGINX_SITE='${NGINX_SITE}'; NGINX_SNIPPET='${NGINX_SNIPPET}'; NGINX_INCLUDE_LINE='${NGINX_INCLUDE_LINE}'; NODE_HEALTH='${NODE_HEALTH}'; WEB_HEALTH='${WEB_HEALTH}'; run_release"
+    "$(declare -f wait_for_http_ok); $(declare -f ensure_nginx_include); $(declare -f run_git_pull); $(declare -f run_release); APP_DIR='${APP_DIR}'; DATA_ROOT='${DATA_ROOT}'; SERVICE_NAME='${SERVICE_NAME}'; SERVICE_USER='${SERVICE_USER}'; SYSTEMD_TARGET='${SYSTEMD_TARGET}'; NGINX_SITE='${NGINX_SITE}'; NGINX_SNIPPET='${NGINX_SNIPPET}'; NGINX_INCLUDE_LINE='${NGINX_INCLUDE_LINE}'; NODE_HEALTH='${NODE_HEALTH}'; WEB_HEALTH='${WEB_HEALTH}'; GIT_PROXY_URL='${GIT_PROXY_URL}'; GIT_PULL_TIMEOUT_SECONDS='${GIT_PULL_TIMEOUT_SECONDS}'; run_release"
 fi
