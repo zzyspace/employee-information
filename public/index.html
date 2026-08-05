@@ -17,6 +17,7 @@
         --line: rgba(23, 32, 42, 0.09);
         --brand: #007aff;
         --brand-soft: rgba(0, 122, 255, 0.11);
+        --on-brand: #f1f4f8;
         --required-bg: #fff1e8;
         --required-ink: #9d4e2e;
         --danger: #b42318;
@@ -232,7 +233,7 @@
         border: 0;
         border-radius: 18px;
         background: var(--brand);
-        color: var(--page);
+        color: var(--on-brand);
         font-size: 16px;
         font-weight: 760;
         cursor: pointer;
@@ -383,7 +384,7 @@
       <section class="success-panel" role="dialog" aria-modal="true" aria-labelledby="success-title">
         <div class="success-icon">✓</div>
         <h2 id="success-title">提交成功</h2>
-        <p>我们已收到您的入职信息，请等待门店工作人员后续确认。</p>
+        <p>您的入职信息已提交</p>
         <button id="success-close" class="cta" type="button">关闭此页面</button>
       </section>
     </div>
