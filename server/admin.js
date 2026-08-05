@@ -73,6 +73,7 @@ function buildListWhereClause({ search, storeKey, status }) {
     clauses.push(
       `(name LIKE @search ESCAPE '\\'
         OR phone LIKE @search ESCAPE '\\'
+        OR identity_card_number LIKE @search ESCAPE '\\'
         OR id LIKE @search ESCAPE '\\'
         OR CAST(submit_id AS TEXT) LIKE @search ESCAPE '\\')`
     );
@@ -131,6 +132,7 @@ export function getEmployeeSubmissionHistory(db, submissionId) {
     name: revision.name,
     phone: revision.phone,
     position: revision.position,
+    identityCardNumber: revision.identity_card_number,
     storeKey: revision.store_key,
     changedAt: revision.changed_at,
     actorUsername: revision.actor_username,
@@ -273,6 +275,7 @@ export async function updateEmployeeSubmission({
         version: nextVersion,
         action: "updated",
         ...payload,
+        identityCardNumber: existing.identity_card_number,
         idCardFrontAttachmentId,
         idCardBackAttachmentId,
         healthCertificateAttachmentId,
@@ -318,6 +321,7 @@ function changeDeletionState({ db, submissionId, actorUsername, now, action }) {
       name: existing.name,
       phone: existing.phone,
       position: existing.position,
+      identityCardNumber: existing.identity_card_number,
       storeKey: existing.store_key,
       idCardFrontAttachmentId: existing.current_id_card_front_attachment_id,
       idCardBackAttachmentId: existing.current_id_card_back_attachment_id,

@@ -16,3 +16,29 @@ export const dbInitSqlPath = path.join(projectRoot, "db", "init.sql");
 export const publicDir = path.join(projectRoot, "public");
 export const adminUsername = process.env.INVOICE_ADMIN_USERNAME || "";
 export const adminPassword = process.env.INVOICE_ADMIN_PASSWORD || "";
+export const idCardModelProvider = (
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROVIDER ||
+  process.env.WECHATY_REIMBURSEMENT_EXTRACTION_PROVIDER ||
+  "openai"
+).toLowerCase();
+export const idCardModelBaseUrl =
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_BASE_URL ||
+  process.env.WECHATY_REIMBURSEMENT_EXTRACTION_BASE_URL ||
+  (idCardModelProvider === "qwen"
+    ? "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    : "https://api.openai.com/v1");
+export const idCardModelApiKey =
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_API_KEY ||
+  process.env.WECHATY_REIMBURSEMENT_EXTRACTION_API_KEY ||
+  "";
+export const idCardModelName =
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_NAME ||
+  process.env.WECHATY_REIMBURSEMENT_EXTRACTION_MODEL ||
+  (idCardModelProvider === "qwen" ? "qwen3.5-flash" : "gpt-5.6-luna");
+export const idCardModelProxyUrl =
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROXY_URL ||
+  process.env.WECHATY_REIMBURSEMENT_OPENAI_PROXY_URL ||
+  "";
+export const idCardModelTimeoutMs = Number(
+  process.env.EMPLOYEE_INFORMATION_ID_CARD_MODEL_TIMEOUT_MS || 60_000
+);

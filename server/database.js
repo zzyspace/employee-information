@@ -15,6 +15,15 @@ function ensurePositionColumns(db) {
   }
 }
 
+function ensureIdentityCardNumberColumns(db) {
+  for (const tableName of ["employee_submissions", "employee_submission_revisions"]) {
+    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+    if (!columns.some((column) => column.name === "identity_card_number")) {
+      db.exec(`ALTER TABLE ${tableName} ADD COLUMN identity_card_number TEXT`);
+    }
+  }
+}
+
 export function createDatabase({ dbFilePath, dbInitSqlPath }) {
   fs.mkdirSync(path.dirname(dbFilePath), { recursive: true });
   const db = new Database(dbFilePath);
@@ -23,5 +32,6 @@ export function createDatabase({ dbFilePath, dbInitSqlPath }) {
   db.pragma("busy_timeout = 5000");
   db.exec(fs.readFileSync(dbInitSqlPath, "utf8"));
   ensurePositionColumns(db);
+  ensureIdentityCardNumberColumns(db);
   return db;
 }

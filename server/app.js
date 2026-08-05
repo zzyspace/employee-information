@@ -21,11 +21,21 @@ import {
   adminUsername,
   dbFilePath,
   dbInitSqlPath,
+  idCardModelApiKey,
+  idCardModelBaseUrl,
+  idCardModelName,
+  idCardModelProvider,
+  idCardModelProxyUrl,
+  idCardModelTimeoutMs,
   publicDir,
   uploadsRoot,
 } from "./config.js";
 import { createDatabase } from "./database.js";
 import { UploadValidationError } from "./file-storage.js";
+import {
+  IdentityCardRecognitionError,
+  createIdentityCardRecognizer,
+} from "./identity-card-recognizer.js";
 import {
   ALLOWED_STORE_KEYS,
   SubmissionValidationError,
@@ -69,6 +79,14 @@ export function createApp({
   staticDir = publicDir,
   uploadDirectory = uploadsRoot,
   adminCredentials = { username: adminUsername, password: adminPassword },
+  identityCardRecognizer = createIdentityCardRecognizer({
+    baseUrl: idCardModelBaseUrl,
+    apiKey: idCardModelApiKey,
+    model: idCardModelName,
+    provider: idCardModelProvider,
+    proxyUrl: idCardModelProxyUrl,
+    timeoutMs: idCardModelTimeoutMs,
+  }),
 } = {}) {
   const app = express();
   const adminAuth = createAdminAuthMiddleware(adminCredentials);
@@ -102,6 +120,7 @@ export function createApp({
         storeKey: request.params.storeKey,
         db,
         uploadsRoot: uploadDirectory,
+        identityCardRecognizer,
       });
       response.status(201).json({ success: true, ...result });
     } catch (error) {
@@ -218,7 +237,8 @@ export function createApp({
     if (
       error instanceof SubmissionValidationError ||
       error instanceof UploadValidationError ||
-      error instanceof AdminOperationError
+      error instanceof AdminOperationError ||
+      error instanceof IdentityCardRecognitionError
     ) {
       response.status(error.statusCode || 400).json({
         success: false,

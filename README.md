@@ -26,6 +26,7 @@
 - 手机号必须是有效的中国大陆 11 位手机号。
 - 岗位必选，支持前厅和后厨。
 - 身份证正面、反面必填，健康证选填。
+- 提交时使用与 `wechat-claw` 报账识别相同的模型配置识别身份证正面；识别出通过校验的 18 位身份证号时写入该字段，识别失败不影响员工记录和附件保存。
 - 提交前必须添加财务微信、备注真实姓名与门店名称，并勾选完成确认。
 - 支持 JPG、PNG、HEIC、HEIF、PDF，每个文件最大 20MB。
 - 门店由页面路径决定，公开页面没有门店选择器。
@@ -59,6 +60,20 @@ http://127.0.0.1:8789/employee/portal
 
 本地数据默认写入 `.data/`。可通过 `EMPLOYEE_INFORMATION_DATA_ROOT` 修改。
 
+## 身份证识别模型
+
+服务默认直接复用 `wechat-claw` 的以下环境变量：
+
+```text
+WECHATY_REIMBURSEMENT_EXTRACTION_PROVIDER
+WECHATY_REIMBURSEMENT_EXTRACTION_MODEL
+WECHATY_REIMBURSEMENT_EXTRACTION_API_KEY
+WECHATY_REIMBURSEMENT_EXTRACTION_BASE_URL
+WECHATY_REIMBURSEMENT_OPENAI_PROXY_URL
+```
+
+生产服务会额外加载 `wechat-claw` 使用的 `/etc/wechat-claw.env`，从而读取同一组模型配置；`/etc/invoice-submit.env` 仍只用于共享后台凭据。需要单独切换员工系统时，可用 `EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROVIDER`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_NAME`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_API_KEY`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_BASE_URL`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROXY_URL` 覆盖。模型请求失败、结果缺失或身份证校验码/出生日期不合法时，员工记录和附件仍会保存，`identity_card_number` 保持为空。
+
 ## 验证
 
 ```bash
@@ -76,6 +91,7 @@ npm test
 - Node 监听：`127.0.0.1:8789`
 - Nginx snippet：`/etc/nginx/snippets/employee-information.locations.conf`
 - 共享后台凭据：`/etc/invoice-submit.env`
+- 共享 `wechat-claw` 模型配置：`/etc/wechat-claw.env`
 
 Nginx 对 `/employee/` 的请求体上限为 65MB，允许一次提交三个 20MB 文件并保留 multipart 开销。
 

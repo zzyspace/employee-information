@@ -10,15 +10,25 @@ import { createApp } from "../server/app.js";
 import { MAX_FILE_BYTES } from "../server/config.js";
 import { createDatabase } from "../server/database.js";
 import { UploadValidationError, validateUploadFile } from "../server/file-storage.js";
+import {
+  IdentityCardRecognitionError,
+  createIdentityCardRecognizer,
+  isValidIdentityCardNumber,
+  parseIdentityCardNumber,
+} from "../server/identity-card-recognizer.js";
 import { createEmployeeSubmission } from "../server/submissions.js";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
+const VALID_ID_CARD_NUMBER = "11010519491231002X";
 
 function createTempDirectory() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "employee-information-test-"));
 }
 
-function createHarness({ adminCredentials = { username: "admin", password: "secret-pass" } } = {}) {
+function createHarness({
+  adminCredentials = { username: "admin", password: "secret-pass" },
+  identityCardRecognizer = async () => VALID_ID_CARD_NUMBER,
+} = {}) {
   const tempDir = createTempDirectory();
   const db = createDatabase({
     dbFilePath: path.join(tempDir, "data", "app.db"),
@@ -30,6 +40,7 @@ function createHarness({ adminCredentials = { username: "admin", password: "secr
     uploadDirectory: uploadsRoot,
     staticDir: path.join(projectRoot, "public"),
     adminCredentials,
+    identityCardRecognizer,
   });
   return {
     app,
@@ -150,6 +161,12 @@ test("database migration adds position columns without fabricating legacy values
     assert.ok(
       migratedDb.prepare("PRAGMA table_info(employee_submission_revisions)").all().some((column) => column.name === "position")
     );
+    assert.ok(
+      migratedDb.prepare("PRAGMA table_info(employee_submissions)").all().some((column) => column.name === "identity_card_number")
+    );
+    assert.ok(
+      migratedDb.prepare("PRAGMA table_info(employee_submission_revisions)").all().some((column) => column.name === "identity_card_number")
+    );
     assert.equal(
       migratedDb.prepare("SELECT position FROM employee_submissions WHERE id = ?").get("legacy-id").position,
       null
@@ -209,9 +226,20 @@ test("valid submissions retain duplicate phone numbers as independent records", 
       const secondPayload = await second.json();
       assert.notEqual(firstPayload.id, secondPayload.id);
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_submissions").get().count, 2);
+      assert.deepEqual(
+        harness.db.prepare("SELECT identity_card_number FROM employee_submissions ORDER BY submit_id").all(),
+        [{ identity_card_number: VALID_ID_CARD_NUMBER }, { identity_card_number: VALID_ID_CARD_NUMBER }]
+      );
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_submission_revisions").get().count, 2);
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_attachment_versions").get().count, 5);
       assert.equal(listStoredFiles(harness.uploadsRoot).length, 5);
+      const searchResponse = await fetch(
+        `${baseUrl}/employee/api/admin/submissions?search=${VALID_ID_CARD_NUMBER}`,
+        { headers: authHeaders() }
+      );
+      const searchPayload = await searchResponse.json();
+      assert.equal(searchPayload.total, 2);
+      assert.equal(searchPayload.items[0].identityCardNumber, VALID_ID_CARD_NUMBER);
     });
   } finally {
     harness.close();
@@ -480,11 +508,70 @@ test("uncommitted files are removed when database persistence fails", async () =
           storeKey: "fuzzy",
           db: failingDb,
           uploadsRoot,
+          identityCardRecognizer: async () => VALID_ID_CARD_NUMBER,
         }),
       /database failed/
     );
     assert.equal(listStoredFiles(uploadsRoot).length, 0);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("identity card recognition uses the wechat-claw compatible model request and validates the checksum", async () => {
+  let requestedUrl = "";
+  let requestedInit;
+  const recognizer = createIdentityCardRecognizer({
+    baseUrl: "https://example.com/v1/",
+    apiKey: "test-key",
+    model: "shared-model",
+    provider: "qwen",
+    fetchImpl: async (url, init) => {
+      requestedUrl = url;
+      requestedInit = init;
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: `{"idCardNumber":"${VALID_ID_CARD_NUMBER}"}` } }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    },
+  });
+
+  const result = await recognizer({
+    buffer: jpegBytes(),
+    contentType: "image/jpeg",
+    originalName: "front.jpg",
+  });
+  assert.equal(result, VALID_ID_CARD_NUMBER);
+  assert.equal(requestedUrl, "https://example.com/v1/chat/completions");
+  assert.equal(requestedInit.headers.Authorization, "Bearer test-key");
+  const requestBody = JSON.parse(requestedInit.body);
+  assert.equal(requestBody.model, "shared-model");
+  assert.equal(requestBody.response_format.type, "json_object");
+  assert.match(requestBody.messages[0].content[1].image_url.url, /^data:image\/jpeg;base64,/);
+  assert.equal(isValidIdentityCardNumber(VALID_ID_CARD_NUMBER), true);
+  assert.equal(isValidIdentityCardNumber("110105194912310021"), false);
+  assert.throws(() => parseIdentityCardNumber('{"idCardNumber":null}'), IdentityCardRecognitionError);
+});
+
+test("recognition failure keeps the submission and attachments with an empty identity card number", async () => {
+  const harness = createHarness({
+    identityCardRecognizer: async () => {
+      throw new IdentityCardRecognitionError("无法识别", { statusCode: 422 });
+    },
+  });
+  try {
+    await withServer(harness.app, async (baseUrl) => {
+      const response = await submit(baseUrl);
+      assert.equal(response.status, 201);
+      assert.equal((await response.json()).success, true);
+      assert.deepEqual(
+        harness.db.prepare("SELECT identity_card_number FROM employee_submissions").all(),
+        [{ identity_card_number: null }]
+      );
+      assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_submission_revisions").get().count, 1);
+      assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_attachment_versions").get().count, 2);
+      assert.equal(listStoredFiles(harness.uploadsRoot).length, 2);
+    });
+  } finally {
+    harness.close();
   }
 });

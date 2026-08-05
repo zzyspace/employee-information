@@ -2,6 +2,7 @@ import {
   cleanupUncommittedAttachments,
   writeAttachmentVersion,
 } from "./file-storage.js";
+import { IdentityCardRecognitionError } from "./identity-card-recognizer.js";
 import { insertAttachmentVersion, insertRevision } from "./repository.js";
 
 export const ALLOWED_STORE_KEYS = new Set(["fuzzy", "fuzzy_qz", "peanut"]);
@@ -60,6 +61,7 @@ export async function createEmployeeSubmission({
   storeKey,
   db,
   uploadsRoot,
+  identityCardRecognizer,
   now = new Date(),
   generateId = () => crypto.randomUUID(),
 }) {
@@ -119,17 +121,30 @@ export async function createEmployeeSubmission({
     const byKind = Object.fromEntries(
       pendingAttachments.map((attachment) => [attachment.kind, attachment])
     );
+    let identityCardNumber = null;
+    try {
+      identityCardNumber = await identityCardRecognizer({
+        buffer: idCardFront.buffer,
+        contentType: byKind.id_card_front.contentType,
+        originalName: byKind.id_card_front.originalName,
+      });
+    } catch (error) {
+      if (!(error instanceof IdentityCardRecognitionError)) throw error;
+      console.warn(`Identity card recognition skipped: ${error.message}`);
+    }
 
     db.transaction(() => {
       db.prepare(
         `INSERT INTO employee_submissions (
-          id, name, phone, position, store_key, current_version, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 0, ?, ?)`
+          id, name, phone, position, identity_card_number, store_key,
+          current_version, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`
       ).run(
         submissionId,
         payload.name,
         payload.phone,
         payload.position,
+        identityCardNumber,
         payload.storeKey,
         createdAt,
         createdAt
@@ -159,6 +174,7 @@ export async function createEmployeeSubmission({
         version: 1,
         action: "created",
         ...payload,
+        identityCardNumber,
         idCardFrontAttachmentId: byKind.id_card_front.attachmentVersionId,
         idCardBackAttachmentId: byKind.id_card_back.attachmentVersionId,
         healthCertificateAttachmentId: byKind.health_certificate?.attachmentVersionId || null,
