@@ -144,6 +144,9 @@
         .page { width: min(100% - 20px, 1500px); padding-top: 30px; }
         .controls-grid, .edit-grid, .detail-grid { grid-template-columns: 1fr; }
         .meta-row { flex-direction: column; }
+        th:last-child { right: auto; }
+        td:last-child { position: static; background: transparent; box-shadow: none; }
+        tbody tr:hover td:last-child { background: transparent; }
         .modal { padding: 8px; }
         .dialog { max-height: 96vh; border-radius: 19px; }
         .dialog-header, .dialog-body { padding: 17px; }
