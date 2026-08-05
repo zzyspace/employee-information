@@ -82,13 +82,8 @@
         text-transform: uppercase;
       }
       .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--brand); border-radius: 99px; }
-      h1 { margin: 0; font-size: clamp(42px, 9vw, 68px); line-height: 1.02; letter-spacing: -.055em; }
-      .hero p { margin: 22px 0 0; max-width: 640px; color: var(--muted); font-size: 17px; line-height: 1.75; }
-
-      .progress-wrap { margin-top: 30px; }
-      .progress-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; }
-      .progress-track { height: 7px; margin-top: 11px; overflow: hidden; border-radius: 99px; background: var(--line); }
-      .progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--brand); transition: width .25s ease; }
+      h1 { margin: 0; font-size: 40px; line-height: 1.02; letter-spacing: -.055em; }
+      .hero p { margin: 22px 0 0; max-width: 640px; color: var(--muted); font-size: 16px; line-height: 1.75; }
 
       .form-stack { display: grid; gap: 18px; }
       .section-card, .footer-card {
@@ -214,7 +209,6 @@
       @media (max-width: 620px) {
         .stage { padding: 46px 14px 34px; }
         .hero { padding-inline: 8px; }
-        .hero p { font-size: 16px; }
         .section-card { padding: 23px 18px; border-radius: 25px; }
         .section-header { gap: 12px; }
         .badge-num { flex-basis: 42px; width: 42px; height: 42px; }
@@ -230,10 +224,6 @@
         <div class="eyebrow">Employee Onboarding</div>
         <h1>新员工入职信息</h1>
         <p>请准确填写基本信息，并上传清晰、完整的证件资料。带“必填”标记的项目提交前需要全部完成。</p>
-        <div class="progress-wrap" aria-label="填写进度">
-          <div class="progress-meta"><span>资料填写进度</span><span id="progress-text">0 / 4</span></div>
-          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
-        </div>
       </section>
 
       <form id="employee-form" class="form-stack" novalidate enctype="multipart/form-data">
@@ -241,7 +231,7 @@
           <header class="section-header">
             <div class="badge-num">01</div>
             <div>
-              <div class="section-title-row"><div class="section-title">基本信息</div><span class="tag required">必填</span></div>
+              <div class="section-title-row"><div class="section-title">基本信息</div></div>
               <div class="section-subtitle">请填写与本人证件一致的信息。</div>
             </div>
           </header>
@@ -261,7 +251,7 @@
           <header class="section-header">
             <div class="badge-num">02</div>
             <div>
-              <div class="section-title-row"><div class="section-title">身份证件</div><span class="tag required">必填</span></div>
+              <div class="section-title-row"><div class="section-title">身份证件</div></div>
               <div class="section-subtitle">正反面请分别上传，确保文字和照片清晰可辨。</div>
             </div>
           </header>
@@ -298,7 +288,7 @@
             <div class="badge-num">03</div>
             <div>
               <div class="section-title-row"><div class="section-title">健康证</div><span class="tag">选填</span></div>
-              <div class="section-subtitle">如已办理健康证，可一并上传。</div>
+              <div class="section-subtitle">如未办理健康证请找店长领取资料办理。如已办理健康证必填。</div>
             </div>
           </header>
           <div class="upload-field">
@@ -307,7 +297,7 @@
                 <div class="plus" data-upload-plus="healthCertificate">+</div>
                 <div class="upload-preview" data-upload-preview="healthCertificate" hidden><span>FILE</span></div>
                 <div class="upload-title" data-upload-title="healthCertificate">选择健康证图片或文件</div>
-                <div class="upload-meta" data-upload-meta="healthCertificate">选填 · JPG / PNG / HEIC / PDF · 20MB 内</div>
+                <div class="upload-meta" data-upload-meta="healthCertificate">JPG / PNG / HEIC / PDF · 20MB 内</div>
               </div>
             </label>
             <input class="visually-hidden" id="health-certificate" name="healthCertificate" data-upload-input="healthCertificate" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,image/jpeg,image/png,image/heic,image/heif,application/pdf" />
@@ -346,8 +336,6 @@
         const submitButton = document.getElementById("submit-button");
         const successModal = document.getElementById("success-modal");
         const successClose = document.getElementById("success-close");
-        const progressBar = document.getElementById("progress-bar");
-        const progressText = document.getElementById("progress-text");
         const previewUrls = new Map();
 
         function normalizedPath() {
@@ -371,16 +359,6 @@
           if (file.size <= 0) return "上传文件不能为空。";
           return "";
         }
-        function updateProgress() {
-          const completed = [
-            Boolean(nameInput.value.trim()),
-            PHONE_PATTERN.test(phoneInput.value.trim()),
-            Boolean(document.querySelector('[data-upload-input="idCardFront"]').files[0]),
-            Boolean(document.querySelector('[data-upload-input="idCardBack"]').files[0]),
-          ].filter(Boolean).length;
-          progressText.textContent = `${completed} / 4`;
-          progressBar.style.width = `${completed * 25}%`;
-        }
         function clearPreviewUrl(key) {
           const url = previewUrls.get(key);
           if (url) URL.revokeObjectURL(url);
@@ -401,8 +379,7 @@
             plus.hidden = false;
             preview.hidden = true;
             title.textContent = key === "healthCertificate" ? "选择健康证图片或文件" : "选择图片或文件";
-            meta.textContent = `${key === "healthCertificate" ? "选填 · " : ""}JPG / PNG / HEIC / PDF · 20MB 内`;
-            updateProgress();
+            meta.textContent = "JPG / PNG / HEIC / PDF · 20MB 内";
             return;
           }
           zone.classList.add("is-filled");
@@ -423,7 +400,6 @@
           }
           title.textContent = file.name;
           meta.textContent = `${formatBytes(file.size)} · ${file.type || extension.toUpperCase()}`;
-          updateProgress();
         }
 
         for (const input of document.querySelectorAll("[data-upload-input]")) {
@@ -443,10 +419,8 @@
             syncUploadUi(key);
           });
         }
-        nameInput.addEventListener("input", updateProgress);
         phoneInput.addEventListener("input", () => {
           phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 11);
-          updateProgress();
         });
         successClose.addEventListener("click", () => {
           if (window.WeixinJSBridge?.call) return window.WeixinJSBridge.call("closeWindow");
@@ -475,7 +449,6 @@
             if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "提交失败，请稍后重试。");
             form.reset();
             for (const key of ["idCardFront", "idCardBack", "healthCertificate"]) syncUploadUi(key);
-            updateProgress();
             successModal.hidden = false;
             document.body.classList.add("has-modal");
             successClose.focus();
@@ -486,7 +459,6 @@
             submitButton.textContent = "保存并提交入职信息";
           }
         });
-        updateProgress();
       })();
     </script>
   </body>
