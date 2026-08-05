@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>新员工入职信息</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f5f5f1;
+        --surface: #fff;
+        --surface-soft: #fafaf7;
+        --ink: #171917;
+        --muted: #777c79;
+        --faint: #a6aaa7;
+        --line: rgba(23, 25, 23, 0.09);
+        --brand: #24362f;
+        --brand-soft: #dde5e0;
+        --required-bg: #fff1e8;
+        --required-ink: #9d4e2e;
+        --danger: #b42318;
+        --danger-bg: #fff0ee;
+        --success: #2d6049;
+        --success-bg: #edf7f0;
+        --shadow: 0 18px 55px rgba(31, 38, 34, 0.08);
+        --radius-xl: 30px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #101211;
+          --surface: #1c1f1d;
+          --surface-soft: #252926;
+          --ink: #f4f5f3;
+          --muted: #a7aca8;
+          --faint: #747a76;
+          --line: rgba(255, 255, 255, 0.09);
+          --brand: #e6eee9;
+          --brand-soft: #34443b;
+          --required-bg: #4a3026;
+          --required-ink: #ffc3a8;
+          --danger: #ffb4aa;
+          --danger-bg: #492722;
+          --success: #a7e3c3;
+          --success-bg: #18382a;
+          --shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      html { min-height: 100%; background: var(--page); }
+      body {
+        min-height: 100%;
+        margin: 0;
+        background:
+          radial-gradient(circle at 50% -10%, rgba(114, 135, 122, 0.12), transparent 32rem),
+          var(--page);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      body.has-modal { overflow: hidden; }
+      button, input { font: inherit; }
+
+      .stage { width: min(100%, 760px); margin: 0 auto; padding: 70px 22px 54px; }
+      .hero { padding: 0 6px 34px; }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--brand); border-radius: 99px; }
+      h1 { margin: 0; font-size: clamp(42px, 9vw, 68px); line-height: 1.02; letter-spacing: -.055em; }
+      .hero p { margin: 22px 0 0; max-width: 640px; color: var(--muted); font-size: 17px; line-height: 1.75; }
+
+      .progress-wrap { margin-top: 30px; }
+      .progress-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; }
+      .progress-track { height: 7px; margin-top: 11px; overflow: hidden; border-radius: 99px; background: var(--line); }
+      .progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--brand); transition: width .25s ease; }
+
+      .form-stack { display: grid; gap: 18px; }
+      .section-card, .footer-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      .section-card { padding: 30px; }
+      .section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 26px; }
+      .badge-num {
+        display: grid;
+        place-items: center;
+        flex: 0 0 48px;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--surface-soft);
+        color: var(--brand);
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .section-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+      .section-title { font-size: 24px; font-weight: 780; letter-spacing: -.025em; }
+      .section-subtitle { margin-top: 6px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        background: var(--surface-soft);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .tag.required { background: var(--required-bg); color: var(--required-ink); }
+      .field-grid { display: grid; gap: 18px; }
+      .field { display: grid; gap: 10px; }
+      .field-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      label, .field-label { font-size: 15px; font-weight: 700; }
+      .input-shell {
+        width: 100%;
+        min-width: 0;
+        height: 58px;
+        padding: 0 17px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        outline: none;
+        background: var(--surface-soft);
+        color: var(--ink);
+        font-size: 16px;
+        transition: border-color .18s, box-shadow .18s, background .18s;
+      }
+      .input-shell::placeholder { color: var(--faint); }
+      .input-shell:focus { border-color: var(--brand); background: var(--surface); box-shadow: 0 0 0 4px var(--brand-soft); }
+
+      .upload-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .upload-field { display: grid; gap: 9px; }
+      .upload-dropzone {
+        position: relative;
+        display: grid;
+        align-content: center;
+        min-height: 188px;
+        padding: 20px;
+        overflow: hidden;
+        border: 1px dashed color-mix(in srgb, var(--muted) 50%, transparent);
+        border-radius: var(--radius-lg);
+        background: var(--surface-soft);
+        cursor: pointer;
+        transition: border-color .18s, transform .18s, background .18s;
+      }
+      .upload-dropzone:hover, .upload-dropzone.is-dragging { border-color: var(--brand); transform: translateY(-1px); }
+      .upload-dropzone.is-filled { border-style: solid; background: var(--surface); }
+      .upload-content { display: grid; justify-items: center; gap: 11px; text-align: center; }
+      .plus {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--surface);
+        color: var(--brand);
+        font-size: 26px;
+        font-weight: 300;
+      }
+      .upload-preview { display: grid; place-items: center; width: 82px; height: 82px; overflow: hidden; border-radius: 16px; background: var(--brand-soft); color: var(--brand); font-weight: 800; }
+      .upload-preview[hidden] { display: none; }
+      .upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+      .upload-title { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; }
+      .upload-meta { color: var(--muted); font-size: 12px; }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .helper { color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+      .form-feedback { margin: 0; padding: 15px 17px; border-radius: 16px; font-size: 14px; line-height: 1.55; }
+      .form-feedback[data-variant="error"] { background: var(--danger-bg); color: var(--danger); }
+      .form-feedback[data-variant="success"] { background: var(--success-bg); color: var(--success); }
+      .footer-card { padding: 18px; }
+      .cta {
+        width: 100%;
+        min-height: 58px;
+        border: 0;
+        border-radius: 18px;
+        background: var(--brand);
+        color: var(--page);
+        font-size: 16px;
+        font-weight: 760;
+        cursor: pointer;
+        transition: opacity .18s, transform .18s;
+      }
+      .cta:hover { transform: translateY(-1px); }
+      .cta:disabled { opacity: .5; cursor: wait; transform: none; }
+
+      .success-modal[hidden] { display: none; }
+      .success-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 22px; }
+      .success-backdrop { position: absolute; inset: 0; background: rgba(12, 15, 13, .52); backdrop-filter: blur(10px); }
+      .success-panel { position: relative; width: min(100%, 420px); padding: 34px; border: 1px solid var(--line); border-radius: 28px; background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+      .success-icon { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 20px; border-radius: 50%; background: var(--success-bg); color: var(--success); font-size: 27px; }
+      .success-panel h2 { margin: 0; font-size: 28px; }
+      .success-panel p { margin: 13px 0 24px; color: var(--muted); line-height: 1.7; }
+
+      @media (max-width: 620px) {
+        .stage { padding: 46px 14px 34px; }
+        .hero { padding-inline: 8px; }
+        .hero p { font-size: 16px; }
+        .section-card { padding: 23px 18px; border-radius: 25px; }
+        .section-header { gap: 12px; }
+        .badge-num { flex-basis: 42px; width: 42px; height: 42px; }
+        .section-title { font-size: 21px; }
+        .upload-grid { grid-template-columns: 1fr; }
+        .upload-dropzone { min-height: 164px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage">
+      <section class="hero">
+        <div class="eyebrow">Employee Onboarding</div>
+        <h1>新员工入职信息</h1>
+        <p>请准确填写基本信息，并上传清晰、完整的证件资料。带“必填”标记的项目提交前需要全部完成。</p>
+        <div class="progress-wrap" aria-label="填写进度">
+          <div class="progress-meta"><span>资料填写进度</span><span id="progress-text">0 / 4</span></div>
+          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+        </div>
+      </section>
+
+      <form id="employee-form" class="form-stack" novalidate enctype="multipart/form-data">
+        <section class="section-card">
+          <header class="section-header">
+            <div class="badge-num">01</div>
+            <div>
+              <div class="section-title-row"><div class="section-title">基本信息</div><span class="tag required">必填</span></div>
+              <div class="section-subtitle">请填写与本人证件一致的信息。</div>
+            </div>
+          </header>
+          <div class="field-grid">
+            <div class="field">
+              <div class="field-top"><label for="name">姓名</label><span class="tag required">必填</span></div>
+              <input id="name" class="input-shell" name="name" type="text" autocomplete="name" maxlength="50" placeholder="请输入真实姓名" required />
+            </div>
+            <div class="field">
+              <div class="field-top"><label for="phone">手机号</label><span class="tag required">必填</span></div>
+              <input id="phone" class="input-shell" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="请输入 11 位手机号" required />
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <header class="section-header">
+            <div class="badge-num">02</div>
+            <div>
+              <div class="section-title-row"><div class="section-title">身份证件</div><span class="tag required">必填</span></div>
+              <div class="section-subtitle">正反面请分别上传，确保文字和照片清晰可辨。</div>
+            </div>
+          </header>
+          <div class="upload-grid">
+            <div class="upload-field">
+              <div class="field-top"><span class="field-label">身份证正面</span><span class="tag required">必填</span></div>
+              <label class="upload-dropzone" data-upload-zone="idCardFront" for="id-card-front">
+                <div class="upload-content">
+                  <div class="plus" data-upload-plus="idCardFront">+</div>
+                  <div class="upload-preview" data-upload-preview="idCardFront" hidden><span>FILE</span></div>
+                  <div class="upload-title" data-upload-title="idCardFront">选择图片或文件</div>
+                  <div class="upload-meta" data-upload-meta="idCardFront">JPG / PNG / HEIC / PDF · 20MB 内</div>
+                </div>
+              </label>
+              <input class="visually-hidden" id="id-card-front" name="idCardFront" data-upload-input="idCardFront" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,image/jpeg,image/png,image/heic,image/heif,application/pdf" required />
+            </div>
+            <div class="upload-field">
+              <div class="field-top"><span class="field-label">身份证反面</span><span class="tag required">必填</span></div>
+              <label class="upload-dropzone" data-upload-zone="idCardBack" for="id-card-back">
+                <div class="upload-content">
+                  <div class="plus" data-upload-plus="idCardBack">+</div>
+                  <div class="upload-preview" data-upload-preview="idCardBack" hidden><span>FILE</span></div>
+                  <div class="upload-title" data-upload-title="idCardBack">选择图片或文件</div>
+                  <div class="upload-meta" data-upload-meta="idCardBack">JPG / PNG / HEIC / PDF · 20MB 内</div>
+                </div>
+              </label>
+              <input class="visually-hidden" id="id-card-back" name="idCardBack" data-upload-input="idCardBack" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,image/jpeg,image/png,image/heic,image/heif,application/pdf" required />
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <header class="section-header">
+            <div class="badge-num">03</div>
+            <div>
+              <div class="section-title-row"><div class="section-title">健康证</div><span class="tag">选填</span></div>
+              <div class="section-subtitle">如已办理健康证，可一并上传。</div>
+            </div>
+          </header>
+          <div class="upload-field">
+            <label class="upload-dropzone" data-upload-zone="healthCertificate" for="health-certificate">
+              <div class="upload-content">
+                <div class="plus" data-upload-plus="healthCertificate">+</div>
+                <div class="upload-preview" data-upload-preview="healthCertificate" hidden><span>FILE</span></div>
+                <div class="upload-title" data-upload-title="healthCertificate">选择健康证图片或文件</div>
+                <div class="upload-meta" data-upload-meta="healthCertificate">选填 · JPG / PNG / HEIC / PDF · 20MB 内</div>
+              </div>
+            </label>
+            <input class="visually-hidden" id="health-certificate" name="healthCertificate" data-upload-input="healthCertificate" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,image/jpeg,image/png,image/heic,image/heif,application/pdf" />
+          </div>
+        </section>
+
+        <p id="form-feedback" class="form-feedback" role="status" aria-live="polite" hidden></p>
+        <section class="footer-card"><button id="submit-button" class="cta" type="submit">保存并提交入职信息</button></section>
+      </form>
+    </main>
+
+    <div id="success-modal" class="success-modal" hidden>
+      <div class="success-backdrop" aria-hidden="true"></div>
+      <section class="success-panel" role="dialog" aria-modal="true" aria-labelledby="success-title">
+        <div class="success-icon">✓</div>
+        <h2 id="success-title">提交成功</h2>
+        <p>我们已收到您的入职信息，请等待门店工作人员后续确认。</p>
+        <button id="success-close" class="cta" type="button">关闭此页面</button>
+      </section>
+    </div>
+
+    <script>
+      (() => {
+        const MAX_FILE_BYTES = 20 * 1024 * 1024;
+        const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+        const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "heic", "heif", "pdf"]);
+        const routeMap = new Map([
+          ["/employee/fuzzy", "fuzzy"],
+          ["/employee/fuzzy_qz", "fuzzy_qz"],
+          ["/employee/peanut", "peanut"],
+        ]);
+        const form = document.getElementById("employee-form");
+        const nameInput = document.getElementById("name");
+        const phoneInput = document.getElementById("phone");
+        const feedback = document.getElementById("form-feedback");
+        const submitButton = document.getElementById("submit-button");
+        const successModal = document.getElementById("success-modal");
+        const successClose = document.getElementById("success-close");
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const previewUrls = new Map();
+
+        function normalizedPath() {
+          return window.location.pathname.replace(/\/+$/, "") || "/";
+        }
+        function getStoreKey() { return routeMap.get(normalizedPath()) || ""; }
+        function setFeedback(message, variant = "error") {
+          feedback.hidden = !message;
+          feedback.textContent = message || "";
+          if (message) feedback.dataset.variant = variant;
+          else feedback.removeAttribute("data-variant");
+        }
+        function formatBytes(bytes) {
+          return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`;
+        }
+        function extensionOf(file) { return (file.name.split(".").pop() || "").toLowerCase(); }
+        function validateFile(file, requiredLabel) {
+          if (!file) return requiredLabel ? `请上传${requiredLabel}。` : "";
+          if (!ALLOWED_EXTENSIONS.has(extensionOf(file))) return "仅支持 JPG、PNG、HEIC、HEIF、PDF 文件。";
+          if (file.size > MAX_FILE_BYTES) return "每个文件大小不能超过 20MB。";
+          if (file.size <= 0) return "上传文件不能为空。";
+          return "";
+        }
+        function updateProgress() {
+          const completed = [
+            Boolean(nameInput.value.trim()),
+            PHONE_PATTERN.test(phoneInput.value.trim()),
+            Boolean(document.querySelector('[data-upload-input="idCardFront"]').files[0]),
+            Boolean(document.querySelector('[data-upload-input="idCardBack"]').files[0]),
+          ].filter(Boolean).length;
+          progressText.textContent = `${completed} / 4`;
+          progressBar.style.width = `${completed * 25}%`;
+        }
+        function clearPreviewUrl(key) {
+          const url = previewUrls.get(key);
+          if (url) URL.revokeObjectURL(url);
+          previewUrls.delete(key);
+        }
+        function syncUploadUi(key) {
+          const input = document.querySelector(`[data-upload-input="${key}"]`);
+          const zone = document.querySelector(`[data-upload-zone="${key}"]`);
+          const plus = document.querySelector(`[data-upload-plus="${key}"]`);
+          const preview = document.querySelector(`[data-upload-preview="${key}"]`);
+          const title = document.querySelector(`[data-upload-title="${key}"]`);
+          const meta = document.querySelector(`[data-upload-meta="${key}"]`);
+          const file = input.files[0];
+          clearPreviewUrl(key);
+          preview.textContent = "";
+          if (!file) {
+            zone.classList.remove("is-filled");
+            plus.hidden = false;
+            preview.hidden = true;
+            title.textContent = key === "healthCertificate" ? "选择健康证图片或文件" : "选择图片或文件";
+            meta.textContent = `${key === "healthCertificate" ? "选填 · " : ""}JPG / PNG / HEIC / PDF · 20MB 内`;
+            updateProgress();
+            return;
+          }
+          zone.classList.add("is-filled");
+          plus.hidden = true;
+          preview.hidden = false;
+          const extension = extensionOf(file);
+          if (["jpg", "jpeg", "png"].includes(extension)) {
+            const image = document.createElement("img");
+            const url = URL.createObjectURL(file);
+            previewUrls.set(key, url);
+            image.src = url;
+            image.alt = "文件预览";
+            preview.appendChild(image);
+          } else {
+            const label = document.createElement("span");
+            label.textContent = extension.toUpperCase();
+            preview.appendChild(label);
+          }
+          title.textContent = file.name;
+          meta.textContent = `${formatBytes(file.size)} · ${file.type || extension.toUpperCase()}`;
+          updateProgress();
+        }
+
+        for (const input of document.querySelectorAll("[data-upload-input]")) {
+          const key = input.dataset.uploadInput;
+          input.addEventListener("change", () => syncUploadUi(key));
+          const zone = document.querySelector(`[data-upload-zone="${key}"]`);
+          zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("is-dragging"); });
+          zone.addEventListener("dragleave", () => zone.classList.remove("is-dragging"));
+          zone.addEventListener("drop", (event) => {
+            event.preventDefault();
+            zone.classList.remove("is-dragging");
+            const file = event.dataTransfer?.files?.[0];
+            if (!file) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+            syncUploadUi(key);
+          });
+        }
+        nameInput.addEventListener("input", updateProgress);
+        phoneInput.addEventListener("input", () => {
+          phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 11);
+          updateProgress();
+        });
+        successClose.addEventListener("click", () => {
+          if (window.WeixinJSBridge?.call) return window.WeixinJSBridge.call("closeWindow");
+          if (window.AlipayJSBridge?.call) return window.AlipayJSBridge.call("closeWebview");
+          window.open("", "_self");
+          window.close();
+        });
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          setFeedback("");
+          const storeKey = getStoreKey();
+          if (!storeKey) return setFeedback("当前链接无效，请使用门店提供的专属链接。");
+          if (!nameInput.value.trim()) { setFeedback("请填写姓名。"); nameInput.focus(); return; }
+          if (!PHONE_PATTERN.test(phoneInput.value.trim())) { setFeedback("请输入有效的中国大陆 11 位手机号。"); phoneInput.focus(); return; }
+          for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", ""]]) {
+            const file = document.querySelector(`[data-upload-input="${key}"]`).files[0];
+            const error = validateFile(file, label);
+            if (error) { setFeedback(error); document.querySelector(`[data-upload-zone="${key}"]`).focus?.(); return; }
+          }
+          submitButton.disabled = true;
+          submitButton.textContent = "提交中...";
+          try {
+            const response = await fetch(`/employee/api/submissions/${encodeURIComponent(storeKey)}`, { method: "POST", body: new FormData(form) });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "提交失败，请稍后重试。");
+            form.reset();
+            for (const key of ["idCardFront", "idCardBack", "healthCertificate"]) syncUploadUi(key);
+            updateProgress();
+            successModal.hidden = false;
+            document.body.classList.add("has-modal");
+            successClose.focus();
+          } catch (error) {
+            setFeedback(error.message || "提交失败，请稍后重试。");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "保存并提交入职信息";
+          }
+        });
+        updateProgress();
+      })();
+    </script>
+  </body>
+</html>

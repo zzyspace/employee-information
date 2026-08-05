@@ -1,0 +1,20 @@
+{
+  "name": "employee-information",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node ./scripts/validate-static.mjs",
+    "dev": "node ./server/index.js",
+    "start": "node ./server/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^4.21.2",
+    "multer": "^2.2.0"
+  }
+}

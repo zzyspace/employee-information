@@ -1,0 +1,25 @@
+[Unit]
+Description=Employee Information Service
+After=network.target
+
+[Service]
+Type=simple
+User=employeeinfo
+Group=employeeinfo
+WorkingDirectory=/opt/employee-information/current
+Environment=NODE_ENV=production
+Environment=PORT=8789
+Environment=EMPLOYEE_INFORMATION_HOST=127.0.0.1
+Environment=EMPLOYEE_INFORMATION_DATA_ROOT=/var/lib/employee-information
+EnvironmentFile=-/etc/invoice-submit.env
+ExecStart=/usr/bin/node /opt/employee-information/current/server/index.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/employee-information
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>员工信息后台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f4f7fb;
+        --panel: rgba(255, 255, 255, .88);
+        --surface: #fff;
+        --soft: #f5f7fa;
+        --ink: #17202a;
+        --muted: #697483;
+        --line: #e3e8ef;
+        --brand: #007aff;
+        --brand-soft: rgba(0, 122, 255, .11);
+        --danger: #c5352b;
+        --danger-soft: #fff0ef;
+        --success: #217a4a;
+        --success-soft: #e9f7ef;
+        --warning: #9a6700;
+        --warning-soft: #fff6d8;
+        --shadow: 0 18px 60px rgba(28, 45, 72, .09);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #0f1115;
+          --panel: rgba(29, 32, 38, .9);
+          --surface: #1d2026;
+          --soft: #262a31;
+          --ink: #f1f4f8;
+          --muted: #a4adba;
+          --line: #343942;
+          --brand: #4da3ff;
+          --brand-soft: rgba(77, 163, 255, .16);
+          --danger: #ff8e86;
+          --danger-soft: #412522;
+          --success: #78d59e;
+          --success-soft: #193528;
+          --warning: #ffd36a;
+          --warning-soft: #413619;
+          --shadow: 0 18px 60px rgba(0, 0, 0, .3);
+        }
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0, var(--brand-soft), transparent 34rem), var(--page); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+      body.modal-open { overflow: hidden; }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      .page { width: min(1500px, calc(100% - 36px)); margin: 0 auto; padding: 54px 0 70px; }
+      .hero { margin-bottom: 28px; }
+      .eyebrow { color: var(--brand); font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+      h1 { margin: 9px 0 7px; font-size: clamp(34px, 5vw, 54px); letter-spacing: -.045em; }
+      .hero p { margin: 0; color: var(--muted); line-height: 1.65; }
+      .panel { border: 1px solid var(--line); border-radius: 22px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
+      .controls { padding: 20px; margin-bottom: 18px; }
+      .controls-grid { display: grid; grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(130px, .65fr)) auto auto; gap: 12px; align-items: end; }
+      .field { display: grid; gap: 7px; }
+      .field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+      input, select { width: 100%; min-width: 0; height: 43px; border: 1px solid var(--line); border-radius: 12px; outline: 0; background: var(--surface); color: var(--ink); padding: 0 12px; }
+      input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+      button { min-height: 40px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); padding: 8px 13px; font-weight: 650; }
+      button:hover { border-color: var(--brand); }
+      button:disabled { opacity: .45; cursor: not-allowed; }
+      .button-primary { border-color: var(--brand); background: var(--brand); color: #fff; }
+      .button-danger { border-color: color-mix(in srgb, var(--danger) 24%, var(--line)); background: var(--danger-soft); color: var(--danger); }
+      .button-success { border-color: color-mix(in srgb, var(--success) 24%, var(--line)); background: var(--success-soft); color: var(--success); }
+      .button-quiet { background: transparent; }
+      .meta-row { display: flex; justify-content: space-between; gap: 15px; margin-top: 16px; color: var(--muted); font-size: 13px; }
+      .summary { display: flex; flex-wrap: wrap; gap: 8px; }
+      .pill, .tag { display: inline-flex; align-items: center; min-height: 25px; padding: 3px 9px; border-radius: 99px; background: var(--soft); color: var(--muted); font-size: 12px; font-weight: 700; }
+      .tag.store-fuzzy { background: #eef3ff; color: #365eb7; }
+      .tag.store-fuzzy_qz { background: #f4edff; color: #7744ac; }
+      .tag.store-peanut { background: #fff2df; color: #9a5a0a; }
+      .tag.active { background: var(--success-soft); color: var(--success); }
+      .tag.deleted { background: var(--danger-soft); color: var(--danger); }
+      .status.error { color: var(--danger); }
+      .table-panel { overflow: hidden; }
+      .table-scroll { overflow-x: auto; }
+      table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: fixed; }
+      th, td { padding: 14px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 13px; overflow-wrap: anywhere; }
+      th { position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+      tbody tr:hover { background: color-mix(in srgb, var(--brand-soft) 45%, transparent); }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .muted { margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .doc-buttons, .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+      .doc-buttons button, .actions button { min-height: 30px; padding: 5px 8px; font-size: 11px; }
+      .empty { padding: 50px; color: var(--muted); text-align: center; }
+      .pagination { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; }
+
+      .modal[hidden] { display: none; }
+      .modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 14, 20, .55); backdrop-filter: blur(10px); }
+      .dialog { width: min(100%, 880px); max-height: min(88vh, 900px); overflow: auto; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 90px rgba(0, 0, 0, .25); }
+      .dialog-wide { width: min(100%, 1060px); }
+      .dialog-header { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; gap: 18px; padding: 20px 22px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(15px); }
+      .dialog-header h2 { margin: 0; font-size: 22px; }
+      .dialog-header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+      .dialog-body { padding: 22px; }
+      .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+      .detail-card { min-height: 82px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); }
+      .detail-label { color: var(--muted); font-size: 11px; }
+      .detail-value { margin-top: 7px; font-weight: 700; }
+      .section-heading { margin: 26px 0 12px; font-size: 16px; }
+      .attachment-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+      .attachment-card { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); }
+      .attachment-card strong { display: block; margin-bottom: 8px; }
+      .attachment-card button { width: 100%; margin-top: 10px; }
+      .timeline { display: grid; gap: 11px; }
+      .revision { border: 1px solid var(--line); border-radius: 15px; overflow: hidden; }
+      .revision summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; cursor: pointer; background: var(--soft); }
+      .revision-body { padding: 14px; }
+      .revision-meta { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+      .edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+      .file-field { padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); }
+      .file-field input { height: auto; margin-top: 9px; padding: 10px; }
+      .checkbox-row { display: flex; align-items: center; gap: 9px; margin-top: 12px; color: var(--muted); font-size: 13px; }
+      .checkbox-row input { width: 17px; height: 17px; }
+      .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
+      .modal-feedback { margin: 0 0 15px; padding: 12px; border-radius: 12px; background: var(--danger-soft); color: var(--danger); font-size: 13px; }
+      .preview-modal { z-index: 70; }
+      .preview-body { min-height: 420px; display: grid; place-items: center; background: #111; }
+      .preview-body img { max-width: 100%; max-height: 70vh; object-fit: contain; }
+      .preview-body iframe { width: 100%; height: 70vh; border: 0; background: white; }
+      .preview-status { color: #ddd; padding: 30px; text-align: center; }
+      .download-link { display: inline-flex; margin-top: 10px; color: var(--brand); }
+
+      @media (max-width: 980px) {
+        .controls-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .attachment-list { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 620px) {
+        .page { width: min(100% - 20px, 1500px); padding-top: 30px; }
+        .controls-grid, .edit-grid, .detail-grid { grid-template-columns: 1fr; }
+        .meta-row { flex-direction: column; }
+        .modal { padding: 8px; }
+        .dialog { max-height: 96vh; border-radius: 19px; }
+        .dialog-header, .dialog-body { padding: 17px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="eyebrow">Employee Information Admin</div>
+        <h1>员工信息后台</h1>
+        <p>查看和维护入职资料。每次修改都会生成不可变历史版本，回收站记录可恢复。</p>
+      </section>
+
+      <section class="panel controls">
+        <form id="filter-form">
+          <div class="controls-grid">
+            <div class="field"><label for="search">关键词</label><input id="search" name="search" type="search" placeholder="搜索姓名、手机号、提交 ID" /></div>
+            <div class="field"><label for="store-key">门店</label><select id="store-key" name="storeKey"><option value="">全部门店</option><option value="fuzzy">Fuzzy</option><option value="fuzzy_qz">Fuzzy泉州店</option><option value="peanut">Peanut</option></select></div>
+            <div class="field"><label for="status-filter">状态</label><select id="status-filter" name="status"><option value="active">在用记录</option><option value="deleted">已删除</option><option value="all">全部状态</option></select></div>
+            <div class="field"><label for="limit">每页数量</label><select id="limit" name="limit"><option value="20">20</option><option value="50" selected>50</option><option value="100">100</option></select></div>
+            <button class="button-primary" type="submit">查询</button><button id="refresh-button" type="button">刷新</button>
+          </div>
+        </form>
+        <div class="meta-row"><div class="summary"><span class="pill" id="summary-count">0 条记录</span><span class="pill" id="summary-range">0 - 0</span></div><div class="status" id="status-text">正在加载...</div></div>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-scroll"><table><colgroup><col style="width:58px"><col style="width:135px"><col style="width:80px"><col style="width:92px"><col style="width:112px"><col style="width:115px"><col style="width:210px"><col style="width:135px"><col style="width:195px"></colgroup><thead><tr><th>ID</th><th>提交时间</th><th>状态</th><th>门店</th><th>姓名</th><th>手机号</th><th>证件资料</th><th>最近更新</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
+        <div class="empty" id="empty-state" hidden>暂无符合条件的员工记录。</div>
+        <div class="pagination"><button id="prev-button" type="button">上一页</button><button id="next-button" type="button">下一页</button></div>
+      </section>
+    </main>
+
+    <div class="modal" id="detail-modal" hidden><section class="dialog dialog-wide" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2 id="detail-title">员工资料</h2><p id="detail-subtitle"></p></div><button data-close="detail-modal" type="button">关闭</button></header><div class="dialog-body"><div id="detail-content"></div></div></section></div>
+
+    <div class="modal" id="edit-modal" hidden><section class="dialog" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2>编辑员工资料</h2><p>保存后会创建新的只读历史版本，旧资料不会被覆盖。</p></div><button data-close="edit-modal" type="button">关闭</button></header><div class="dialog-body"><p id="edit-feedback" class="modal-feedback" hidden></p><form id="edit-form" enctype="multipart/form-data"><input id="edit-id" type="hidden"><div class="edit-grid"><div class="field"><label for="edit-name">姓名</label><input id="edit-name" name="name" maxlength="50" required></div><div class="field"><label for="edit-phone">手机号</label><input id="edit-phone" name="phone" inputmode="numeric" maxlength="11" required></div><div class="field"><label for="edit-store">门店</label><select id="edit-store" name="storeKey"><option value="fuzzy">Fuzzy</option><option value="fuzzy_qz">Fuzzy泉州店</option><option value="peanut">Peanut</option></select></div></div><h3 class="section-heading">替换证件（不选择则保留当前版本）</h3><div class="attachment-list"><label class="file-field"><strong>身份证正面</strong><span class="muted" id="edit-front-current"></span><input name="idCardFront" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><label class="file-field"><strong>身份证反面</strong><span class="muted" id="edit-back-current"></span><input name="idCardBack" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><div class="file-field"><label><strong>健康证</strong><span class="muted" id="edit-health-current"></span><input name="healthCertificate" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><label class="checkbox-row" id="remove-health-row"><input id="remove-health" name="removeHealthCertificate" type="checkbox" value="true">移除当前健康证</label></div></div><div class="dialog-actions"><button data-close="edit-modal" type="button">取消</button><button id="edit-submit" class="button-primary" type="submit">保存新版本</button></div></form></div></section></div>
+
+    <div class="modal preview-modal" id="preview-modal" hidden><section class="dialog dialog-wide" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2 id="preview-title">附件预览</h2><p id="preview-meta"></p><a class="download-link" id="preview-download" href="#" download>下载原文件</a></div><button data-close="preview-modal" type="button">关闭</button></header><div class="preview-body"><div class="preview-status" id="preview-status">正在加载附件...</div><img id="preview-image" alt="附件预览" hidden><iframe id="preview-frame" title="PDF 附件预览" sandbox hidden></iframe></div></section></div>
+
+    <script>
+      (() => {
+        const STORE_LABELS = { fuzzy: "Fuzzy", fuzzy_qz: "Fuzzy泉州店", peanut: "Peanut" };
+        const ACTION_LABELS = { created: "员工提交", updated: "资料编辑", deleted: "移入回收站", restored: "从回收站恢复" };
+        const state = { search: "", storeKey: "", status: "active", limit: 50, offset: 0, total: 0, items: [], loading: false };
+        const body = document.getElementById("records-body");
+        const statusText = document.getElementById("status-text");
+        const emptyState = document.getElementById("empty-state");
+        const prevButton = document.getElementById("prev-button");
+        const nextButton = document.getElementById("next-button");
+        const summaryCount = document.getElementById("summary-count");
+        const summaryRange = document.getElementById("summary-range");
+        const editForm = document.getElementById("edit-form");
+        let previewUrl = "";
+
+        function formatDate(value) { if (!value) return "-"; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString("zh-CN", { hour12: false }); }
+        function formatBytes(value) { if (!Number.isFinite(value)) return ""; return value >= 1024 * 1024 ? `${(value / 1024 / 1024).toFixed(1)}MB` : `${(value / 1024).toFixed(1)}KB`; }
+        function setStatus(message, error = false) { statusText.textContent = message; statusText.classList.toggle("error", error); }
+        function element(tag, text = "", className = "") { const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node; }
+        async function requestJson(url, options) { const response = await fetch(url, options); const payload = await response.json().catch(() => ({})); if (!response.ok || !payload.success) throw new Error(payload?.error?.message || "操作失败"); return payload; }
+        function attachmentButton(attachment, label) { if (!attachment) return element("span", "未上传", "muted"); const button = element("button", label); button.type = "button"; button.dataset.previewUrl = attachment.url; button.dataset.previewName = attachment.originalName; button.dataset.previewType = attachment.contentType; button.dataset.previewSize = String(attachment.sizeBytes); return button; }
+        function storeTag(key) { const tag = element("span", STORE_LABELS[key] || key, `tag store-${key}`); return tag; }
+        function statusTag(item) { return element("span", item.deletedAt ? "已删除" : "在用", `tag ${item.deletedAt ? "deleted" : "active"}`); }
+
+        function renderRows() {
+          body.textContent = "";
+          for (const item of state.items) {
+            const row = document.createElement("tr");
+            const values = [item.submitId, formatDate(item.createdAt), null, null, item.name, item.phone, null, formatDate(item.updatedAt), null];
+            values.forEach((value, index) => { const cell = document.createElement("td"); if (value !== null) cell.textContent = String(value); if (index === 0) cell.className = "mono"; row.appendChild(cell); });
+            row.children[2].appendChild(statusTag(item));
+            row.children[3].appendChild(storeTag(item.storeKey));
+            const docs = element("div", "", "doc-buttons");
+            docs.append(attachmentButton(item.attachments.idCardFront, "身份证正面"), attachmentButton(item.attachments.idCardBack, "身份证反面"));
+            if (item.attachments.healthCertificate) docs.appendChild(attachmentButton(item.attachments.healthCertificate, "健康证"));
+            row.children[6].appendChild(docs);
+            const actions = element("div", "", "actions");
+            const detail = element("button", "详情 / 历史"); detail.dataset.action = "detail"; detail.dataset.id = item.id; actions.appendChild(detail);
+            if (item.deletedAt) { const restore = element("button", "恢复", "button-success"); restore.dataset.action = "restore"; restore.dataset.id = item.id; actions.appendChild(restore); }
+            else { const edit = element("button", "编辑"); edit.dataset.action = "edit"; edit.dataset.id = item.id; const remove = element("button", "删除", "button-danger"); remove.dataset.action = "delete"; remove.dataset.id = item.id; actions.append(edit, remove); }
+            row.children[8].appendChild(actions);
+            body.appendChild(row);
+          }
+        }
+        function updateSummary() { const start = state.total ? state.offset + 1 : 0; const end = state.offset + state.items.length; summaryCount.textContent = `${state.total} 条记录`; summaryRange.textContent = `${start} - ${end}`; prevButton.disabled = state.loading || state.offset === 0; nextButton.disabled = state.loading || end >= state.total; emptyState.hidden = state.items.length > 0; }
+        async function loadRecords() { state.loading = true; setStatus("正在加载..."); updateSummary(); const query = new URLSearchParams({ search: state.search, storeKey: state.storeKey, status: state.status, limit: String(state.limit), offset: String(state.offset) }); try { const payload = await requestJson(`/employee/api/admin/submissions?${query}`); state.total = payload.total || 0; state.items = payload.items || []; renderRows(); setStatus(state.total ? `已加载 ${state.items.length} 条记录。` : "当前没有符合条件的记录。"); } catch (error) { state.total = 0; state.items = []; renderRows(); setStatus(error.message, true); } finally { state.loading = false; updateSummary(); } }
+
+        function openModal(id) { document.getElementById(id).hidden = false; document.body.classList.add("modal-open"); }
+        function closeModal(id) { document.getElementById(id).hidden = true; if (![...document.querySelectorAll(".modal")].some((modal) => !modal.hidden)) document.body.classList.remove("modal-open"); if (id === "preview-modal") { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = ""; document.getElementById("preview-image").removeAttribute("src"); document.getElementById("preview-frame").removeAttribute("src"); } }
+        function renderAttachmentCards(container, attachments) { container.textContent = ""; for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", "健康证"]]) { const attachment = attachments[key]; const card = element("div", "", "attachment-card"); card.appendChild(element("strong", label)); card.appendChild(element("div", attachment ? attachment.originalName : "未上传", "muted")); if (attachment) { card.appendChild(element("div", `${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`, "muted")); card.appendChild(attachmentButton(attachment, "查看附件")); } container.appendChild(card); } }
+        async function openDetail(id) { openModal("detail-modal"); const content = document.getElementById("detail-content"); content.textContent = "正在加载..."; try { const [detailPayload, historyPayload] = await Promise.all([requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`), requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}/history`)]); const item = detailPayload.item; document.getElementById("detail-title").textContent = item.name; document.getElementById("detail-subtitle").textContent = `提交 ID ${item.submitId} · 当前版本 v${item.version}`; content.textContent = ""; const grid = element("div", "", "detail-grid"); for (const [label, value] of [["姓名", item.name], ["手机号", item.phone], ["门店", STORE_LABELS[item.storeKey]], ["状态", item.deletedAt ? "已删除" : "在用"], ["提交时间", formatDate(item.createdAt)], ["最近更新", formatDate(item.updatedAt)], ["删除时间", formatDate(item.deletedAt)], ["当前版本", `v${item.version}`]]) { const card = element("div", "", "detail-card"); card.append(element("div", label, "detail-label"), element("div", value || "-", "detail-value")); grid.appendChild(card); } content.appendChild(grid); content.appendChild(element("h3", "当前证件", "section-heading")); const currentAttachments = element("div", "", "attachment-list"); renderAttachmentCards(currentAttachments, item.attachments); content.appendChild(currentAttachments); content.appendChild(element("h3", "版本历史（只读）", "section-heading")); const timeline = element("div", "", "timeline"); for (const revision of historyPayload.items) { const details = element("details", "", "revision"); const summary = document.createElement("summary"); const left = element("strong", `v${revision.version} · ${ACTION_LABELS[revision.action] || revision.action}`); const right = element("span", formatDate(revision.changedAt), "muted"); summary.append(left, right); const revisionBody = element("div", "", "revision-body"); const meta = element("div", "", "revision-meta"); meta.append(element("span", `姓名：${revision.name}`), element("span", `手机号：${revision.phone}`), element("span", `门店：${STORE_LABELS[revision.storeKey]}`), element("span", `操作人：${revision.actorUsername || "员工提交"}`)); revisionBody.appendChild(meta); const attachments = element("div", "", "attachment-list"); renderAttachmentCards(attachments, revision.attachments); revisionBody.appendChild(attachments); details.append(summary, revisionBody); timeline.appendChild(details); } content.appendChild(timeline); } catch (error) { content.textContent = error.message; } }
+
+        async function openEdit(id) { const feedback = document.getElementById("edit-feedback"); feedback.hidden = true; editForm.reset(); try { const payload = await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`); const item = payload.item; if (item.deletedAt) throw new Error("已删除记录需要先恢复后才能编辑。"); document.getElementById("edit-id").value = item.id; document.getElementById("edit-name").value = item.name; document.getElementById("edit-phone").value = item.phone; document.getElementById("edit-store").value = item.storeKey; document.getElementById("edit-front-current").textContent = item.attachments.idCardFront?.originalName || "未上传"; document.getElementById("edit-back-current").textContent = item.attachments.idCardBack?.originalName || "未上传"; document.getElementById("edit-health-current").textContent = item.attachments.healthCertificate?.originalName || "未上传"; document.getElementById("remove-health-row").hidden = !item.attachments.healthCertificate; openModal("edit-modal"); } catch (error) { setStatus(error.message, true); } }
+        editForm.addEventListener("submit", async (event) => { event.preventDefault(); const id = document.getElementById("edit-id").value; const feedback = document.getElementById("edit-feedback"); const button = document.getElementById("edit-submit"); feedback.hidden = true; button.disabled = true; button.textContent = "保存中..."; try { await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`, { method: "PATCH", body: new FormData(editForm) }); closeModal("edit-modal"); setStatus("已保存新版本，历史资料保持不变。"); await loadRecords(); } catch (error) { feedback.textContent = error.message; feedback.hidden = false; } finally { button.disabled = false; button.textContent = "保存新版本"; } });
+
+        async function deleteRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认把 ${item.name}（${item.phone}）移入回收站？\n\n资料和全部历史附件会保留，可在“已删除”中恢复。`)) return; try { await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`, { method: "DELETE" }); setStatus("记录已移入回收站。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
+        async function restoreRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认恢复 ${item.name}（${item.phone}）？`)) return; try { await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}/restore`, { method: "POST" }); setStatus("记录已恢复。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
+
+        async function openPreview(button) { openModal("preview-modal"); const status = document.getElementById("preview-status"); const image = document.getElementById("preview-image"); const frame = document.getElementById("preview-frame"); status.hidden = false; status.textContent = "正在加载附件..."; image.hidden = true; frame.hidden = true; document.getElementById("preview-title").textContent = button.dataset.previewName || "附件预览"; document.getElementById("preview-meta").textContent = `${button.dataset.previewType || ""} · ${formatBytes(Number(button.dataset.previewSize))}`; try { const response = await fetch(button.dataset.previewUrl); if (!response.ok) { const payload = await response.json().catch(() => ({})); throw new Error(payload?.error?.message || "附件加载失败"); } const blob = await response.blob(); previewUrl = URL.createObjectURL(blob); const download = document.getElementById("preview-download"); download.href = previewUrl; download.download = button.dataset.previewName || "attachment"; const type = (response.headers.get("content-type") || blob.type || button.dataset.previewType || "").split(";")[0]; if (type === "application/pdf") { frame.src = previewUrl; frame.hidden = false; status.hidden = true; } else if (type === "image/jpeg" || type === "image/png") { image.src = previewUrl; image.hidden = false; status.hidden = true; } else { status.innerHTML = "当前浏览器可能无法预览 HEIC/HEIF，请使用上方“下载原文件”。"; } } catch (error) { status.textContent = error.message; } }
+
+        document.getElementById("filter-form").addEventListener("submit", (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); state.search = String(data.get("search") || "").trim(); state.storeKey = String(data.get("storeKey") || ""); state.status = String(data.get("status") || "active"); state.limit = Number(data.get("limit")) || 50; state.offset = 0; loadRecords(); });
+        document.getElementById("refresh-button").addEventListener("click", loadRecords);
+        prevButton.addEventListener("click", () => { state.offset = Math.max(0, state.offset - state.limit); loadRecords(); });
+        nextButton.addEventListener("click", () => { state.offset += state.limit; loadRecords(); });
+        document.addEventListener("click", (event) => { const close = event.target.closest("[data-close]"); if (close) { closeModal(close.dataset.close); return; } const preview = event.target.closest("[data-preview-url]"); if (preview) { openPreview(preview); return; } const action = event.target.closest("[data-action]"); if (!action) return; if (action.dataset.action === "detail") openDetail(action.dataset.id); if (action.dataset.action === "edit") openEdit(action.dataset.id); if (action.dataset.action === "delete") deleteRecord(action.dataset.id); if (action.dataset.action === "restore") restoreRecord(action.dataset.id); });
+        document.querySelectorAll(".modal").forEach((modal) => modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(modal.id); }));
+        document.addEventListener("keydown", (event) => { if (event.key !== "Escape") return; const openModals = [...document.querySelectorAll(".modal")].filter((modal) => !modal.hidden); if (openModals.length) closeModal(openModals.at(-1).id); });
+        loadRecords();
+      })();
+    </script>
+  </body>
+</html>
