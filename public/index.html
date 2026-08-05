@@ -8,22 +8,22 @@
     <style>
       :root {
         color-scheme: light;
-        --page: #f5f5f1;
+        --page: #f4f7fb;
         --surface: #fff;
-        --surface-soft: #fafaf7;
-        --ink: #171917;
-        --muted: #777c79;
-        --faint: #a6aaa7;
-        --line: rgba(23, 25, 23, 0.09);
-        --brand: #24362f;
-        --brand-soft: #dde5e0;
+        --surface-soft: #f5f7fa;
+        --ink: #17202a;
+        --muted: #697483;
+        --faint: #9aa4b2;
+        --line: rgba(23, 32, 42, 0.09);
+        --brand: #007aff;
+        --brand-soft: rgba(0, 122, 255, 0.11);
         --required-bg: #fff1e8;
         --required-ink: #9d4e2e;
         --danger: #b42318;
         --danger-bg: #fff0ee;
         --success: #2d6049;
         --success-bg: #edf7f0;
-        --shadow: 0 18px 55px rgba(31, 38, 34, 0.08);
+        --shadow: 0 18px 55px rgba(28, 45, 72, 0.09);
         --radius-xl: 30px;
         --radius-lg: 22px;
         --radius-md: 16px;
@@ -32,15 +32,15 @@
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
-          --page: #101211;
-          --surface: #1c1f1d;
-          --surface-soft: #252926;
-          --ink: #f4f5f3;
-          --muted: #a7aca8;
-          --faint: #747a76;
+          --page: #0f1115;
+          --surface: #1d2026;
+          --surface-soft: #262a31;
+          --ink: #f1f4f8;
+          --muted: #a4adba;
+          --faint: #737e8d;
           --line: rgba(255, 255, 255, 0.09);
-          --brand: #e6eee9;
-          --brand-soft: #34443b;
+          --brand: #4da3ff;
+          --brand-soft: rgba(77, 163, 255, 0.16);
           --required-bg: #4a3026;
           --required-ink: #ffc3a8;
           --danger: #ffb4aa;
@@ -58,7 +58,7 @@
         min-height: 100%;
         margin: 0;
         background:
-          radial-gradient(circle at 50% -10%, rgba(114, 135, 122, 0.12), transparent 32rem),
+          radial-gradient(circle at 50% -10%, rgba(0, 122, 255, 0.10), transparent 32rem),
           var(--page);
         color: var(--ink);
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
@@ -359,7 +359,7 @@
             <div class="badge-num">04</div>
             <div>
               <div class="section-title-row"><div class="section-title">添加微信</div><span class="tag required">必填</span></div>
-              <div class="section-subtitle">请添加财务微信，并备注真实姓名与门店名称</div>
+              <div class="section-subtitle">请长按二维码添加财务微信，并备注真实姓名与门店名称</div>
             </div>
           </header>
           <div class="wechat-content">
@@ -368,7 +368,7 @@
             </div>
             <label class="wechat-confirmation" for="wechat-confirmed">
               <input id="wechat-confirmed" name="wechatConfirmed" type="checkbox" required />
-              <span>我已添加财务微信，并备注真实姓名与门店名称</span>
+              <span>我已发送好友请求，并已备注真实姓名与门店名称</span>
             </label>
           </div>
         </section>
