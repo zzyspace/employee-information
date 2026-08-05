@@ -73,7 +73,8 @@
       .button-quiet { background: transparent; }
       .meta-row { display: flex; justify-content: space-between; gap: 15px; margin-top: 16px; color: var(--muted); font-size: 13px; }
       .summary { display: flex; flex-wrap: wrap; gap: 8px; }
-      .pill, .tag { display: inline-flex; align-items: center; min-height: 25px; padding: 3px 9px; border-radius: 99px; background: var(--soft); color: var(--muted); font-size: 12px; font-weight: 700; }
+      .pill, .tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 99px; background: var(--soft); color: var(--muted); font-size: 12px; font-weight: 700; }
+      .tag { box-sizing: border-box; justify-content: center; height: 25px; line-height: 1; white-space: nowrap; }
       .tag.store-fuzzy { background: #eef3ff; color: #365eb7; }
       .tag.store-fuzzy_qz { background: #f4edff; color: #7744ac; }
       .tag.store-peanut { background: #fff2df; color: #9a5a0a; }
@@ -166,7 +167,7 @@
       </section>
 
       <section class="panel table-panel">
-        <div class="table-scroll"><table><colgroup><col style="width:58px"><col style="width:135px"><col style="width:80px"><col style="width:92px"><col style="width:112px"><col style="width:115px"><col style="width:170px"><col style="width:80px"><col style="width:210px"><col style="width:135px"><col style="width:195px"></colgroup><thead><tr><th>ID</th><th>提交时间</th><th>状态</th><th>门店</th><th>姓名</th><th>手机号</th><th>身份证号</th><th>岗位</th><th>证件资料</th><th>最近更新</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
+        <div class="table-scroll"><table><colgroup><col style="width:58px"><col style="width:92px"><col style="width:80px"><col style="width:112px"><col style="width:115px"><col style="width:170px"><col style="width:210px"><col style="width:135px"><col style="width:135px"><col style="width:80px"><col style="width:195px"></colgroup><thead><tr><th>ID</th><th>门店</th><th>岗位</th><th>姓名</th><th>手机号</th><th>身份证号</th><th>证件资料</th><th>提交时间</th><th>最近更新</th><th>状态</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
         <div class="empty" id="empty-state" hidden>暂无符合条件的员工记录。</div>
         <div class="pagination"><button id="prev-button" type="button">上一页</button><button id="next-button" type="button">下一页</button></div>
       </section>
@@ -200,21 +201,21 @@
         function element(tag, text = "", className = "") { const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node; }
         async function requestJson(url, options) { const response = await fetch(url, options); const payload = await response.json().catch(() => ({})); if (!response.ok || !payload.success) throw new Error(payload?.error?.message || "操作失败"); return payload; }
         function attachmentButton(attachment, label) { if (!attachment) return element("span", "未上传", "muted"); const button = element("button", label); button.type = "button"; button.dataset.previewUrl = attachment.url; button.dataset.previewName = attachment.originalName; button.dataset.previewType = attachment.contentType; button.dataset.previewSize = String(attachment.sizeBytes); return button; }
-        function storeTag(key) { const tag = element("span", STORE_LABELS[key] || key, `tag store-${key}`); return tag; }
+        function storeTag(key) { return element("span", STORE_LABELS[key] || key, `tag store-${key}`); }
         function statusTag(item) { return element("span", item.deletedAt ? "已删除" : "在用", `tag ${item.deletedAt ? "deleted" : "active"}`); }
 
         function renderRows() {
           body.textContent = "";
           for (const item of state.items) {
             const row = document.createElement("tr");
-            const values = [item.submitId, formatDate(item.createdAt), null, null, item.name, item.phone, item.identityCardNumber || "-", POSITION_LABELS[item.position] || "-", null, formatDate(item.updatedAt), null];
-            values.forEach((value, index) => { const cell = document.createElement("td"); if (value !== null) cell.textContent = String(value); if (index === 0 || index === 6) cell.className = "mono"; row.appendChild(cell); });
-            row.children[2].appendChild(statusTag(item));
-            row.children[3].appendChild(storeTag(item.storeKey));
+            const values = [item.submitId, null, POSITION_LABELS[item.position] || "-", item.name, item.phone, item.identityCardNumber || "-", null, formatDate(item.createdAt), formatDate(item.updatedAt), null, null];
+            values.forEach((value, index) => { const cell = document.createElement("td"); if (value !== null) cell.textContent = String(value); if (index === 0 || index === 5) cell.className = "mono"; row.appendChild(cell); });
+            row.children[1].appendChild(storeTag(item.storeKey));
             const docs = element("div", "", "doc-buttons");
             docs.append(attachmentButton(item.attachments.idCardFront, "身份证正面"), attachmentButton(item.attachments.idCardBack, "身份证反面"));
             if (item.attachments.healthCertificate) docs.appendChild(attachmentButton(item.attachments.healthCertificate, "健康证"));
-            row.children[8].appendChild(docs);
+            row.children[6].appendChild(docs);
+            row.children[9].appendChild(statusTag(item));
             const actions = element("div", "", "actions");
             const detail = element("button", "详情 / 历史"); detail.dataset.action = "detail"; detail.dataset.id = item.id; actions.appendChild(detail);
             if (item.deletedAt) { const restore = element("button", "恢复", "button-success"); restore.dataset.action = "restore"; restore.dataset.id = item.id; actions.appendChild(restore); }
