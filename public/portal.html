@@ -83,11 +83,16 @@
       .status.error { color: var(--danger); }
       .table-panel { overflow: hidden; }
       .table-scroll { overflow-x: auto; }
-      table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: fixed; }
-      th, td { padding: 14px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 13px; overflow-wrap: anywhere; }
+      table { width: 100%; min-width: 1239px; border-collapse: collapse; table-layout: fixed; }
+      th, td { padding: 14px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; font-size: 13px; overflow-wrap: anywhere; }
       th { position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
       tbody tr:hover { background: color-mix(in srgb, var(--brand-soft) 45%, transparent); }
+      th:last-child, td:last-child { position: sticky; right: 0; }
+      th:last-child { z-index: 2; }
+      td:last-child { background: var(--surface); box-shadow: -12px 0 18px -18px rgba(0, 0, 0, .65); }
+      tbody tr:hover td:last-child { background: color-mix(in srgb, var(--surface) 90%, var(--brand-soft)); }
       .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .table-date { white-space: pre-line; overflow-wrap: normal; }
       .muted { margin-top: 4px; color: var(--muted); font-size: 11px; }
       .doc-buttons, .actions { display: flex; flex-wrap: wrap; gap: 6px; }
       .doc-buttons button, .actions button { min-height: 30px; padding: 5px 8px; font-size: 11px; }
@@ -167,7 +172,7 @@
       </section>
 
       <section class="panel table-panel">
-        <div class="table-scroll"><table><colgroup><col style="width:58px"><col style="width:92px"><col style="width:80px"><col style="width:112px"><col style="width:115px"><col style="width:170px"><col style="width:210px"><col style="width:135px"><col style="width:135px"><col style="width:80px"><col style="width:195px"></colgroup><thead><tr><th>ID</th><th>门店</th><th>岗位</th><th>姓名</th><th>手机号</th><th>身份证号</th><th>证件资料</th><th>提交时间</th><th>最近更新</th><th>状态</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
+        <div class="table-scroll"><table><colgroup><col style="width:50px"><col style="width:110px"><col style="width:60px"><col style="width:80px"><col style="width:110px"><col style="width:170px"><col style="width:180px"><col style="width:110px"><col style="width:110px"><col style="width:64px"><col style="width:195px"></colgroup><thead><tr><th>ID</th><th>门店</th><th>岗位</th><th>姓名</th><th>手机号</th><th>身份证号</th><th>证件资料</th><th>提交时间</th><th>最近更新</th><th>状态</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
         <div class="empty" id="empty-state" hidden>暂无符合条件的员工记录。</div>
         <div class="pagination"><button id="prev-button" type="button">上一页</button><button id="next-button" type="button">下一页</button></div>
       </section>
@@ -196,6 +201,7 @@
         let previewUrl = "";
 
         function formatDate(value) { if (!value) return "-"; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString("zh-CN", { hour12: false }); }
+        function formatTableDate(value) { if (!value) return "-"; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const datePart = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }); const timePart = date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }); return `${datePart}\n${timePart}`; }
         function formatBytes(value) { if (!Number.isFinite(value)) return ""; return value >= 1024 * 1024 ? `${(value / 1024 / 1024).toFixed(1)}MB` : `${(value / 1024).toFixed(1)}KB`; }
         function setStatus(message, error = false) { statusText.textContent = message; statusText.classList.toggle("error", error); }
         function element(tag, text = "", className = "") { const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node; }
@@ -208,11 +214,11 @@
           body.textContent = "";
           for (const item of state.items) {
             const row = document.createElement("tr");
-            const values = [item.submitId, null, POSITION_LABELS[item.position] || "-", item.name, item.phone, item.identityCardNumber || "-", null, formatDate(item.createdAt), formatDate(item.updatedAt), null, null];
-            values.forEach((value, index) => { const cell = document.createElement("td"); if (value !== null) cell.textContent = String(value); if (index === 0 || index === 5) cell.className = "mono"; row.appendChild(cell); });
+            const values = [item.submitId, null, POSITION_LABELS[item.position] || "-", item.name, item.phone, item.identityCardNumber || "-", null, formatTableDate(item.createdAt), formatTableDate(item.updatedAt), null, null];
+            values.forEach((value, index) => { const cell = document.createElement("td"); if (value !== null) cell.textContent = String(value); if (index === 0 || index === 5) cell.classList.add("mono"); if (index === 7 || index === 8) cell.classList.add("table-date"); row.appendChild(cell); });
             row.children[1].appendChild(storeTag(item.storeKey));
             const docs = element("div", "", "doc-buttons");
-            docs.append(attachmentButton(item.attachments.idCardFront, "身份证正面"), attachmentButton(item.attachments.idCardBack, "身份证反面"));
+            docs.append(attachmentButton(item.attachments.idCardFront, "正面"), attachmentButton(item.attachments.idCardBack, "反面"));
             if (item.attachments.healthCertificate) docs.appendChild(attachmentButton(item.attachments.healthCertificate, "健康证"));
             row.children[6].appendChild(docs);
             row.children[9].appendChild(statusTag(item));
