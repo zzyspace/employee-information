@@ -9,7 +9,11 @@ import Database from "better-sqlite3";
 import { createApp } from "../server/app.js";
 import { MAX_FILE_BYTES } from "../server/config.js";
 import { createDatabase } from "../server/database.js";
-import { UploadValidationError, validateUploadFile } from "../server/file-storage.js";
+import {
+  UploadValidationError,
+  normalizeUploadOriginalName,
+  validateUploadFile,
+} from "../server/file-storage.js";
 import {
   IdentityCardRecognitionError,
   createIdentityCardRecognizer,
@@ -203,6 +207,14 @@ test("only the three store routes expose the form and portal requires auth", asy
       assert.equal(qrCode.headers.get("x-content-type-options"), "nosniff");
       assert.ok((await qrCode.arrayBuffer()).byteLength > 0);
 
+      for (const assetName of ["pdf.min.mjs", "pdf.worker.min.mjs"]) {
+        const asset = await fetch(`${baseUrl}/employee/assets/pdfjs/${assetName}`);
+        assert.equal(asset.status, 200);
+        assert.match(asset.headers.get("content-type"), /javascript/);
+        assert.equal(asset.headers.get("x-content-type-options"), "nosniff");
+        assert.ok((await asset.arrayBuffer()).byteLength > 100_000);
+      }
+
       assert.equal((await fetch(`${baseUrl}/employee/portal`)).status, 401);
       assert.equal(
         (await fetch(`${baseUrl}/employee/portal`, { headers: authHeaders() })).status,
@@ -218,7 +230,7 @@ test("valid submissions retain duplicate phone numbers as independent records", 
   const harness = createHarness();
   try {
     await withServer(harness.app, async (baseUrl) => {
-      const first = await submit(baseUrl, { health: makeFile(pdfBytes(), "health.pdf", "application/pdf") });
+      const first = await submit(baseUrl, { health: makeFile(pdfBytes(), "王晨旭的健康证.pdf", "application/pdf") });
       const second = await submit(baseUrl);
       assert.equal(first.status, 201);
       assert.equal(second.status, 201);
@@ -233,6 +245,14 @@ test("valid submissions retain duplicate phone numbers as independent records", 
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_submission_revisions").get().count, 2);
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_attachment_versions").get().count, 5);
       assert.equal(listStoredFiles(harness.uploadsRoot).length, 5);
+      const firstDetail = await fetch(
+        `${baseUrl}/employee/api/admin/submissions/${firstPayload.id}`,
+        { headers: authHeaders() }
+      );
+      assert.equal(
+        (await firstDetail.json()).item.attachments.healthCertificate.originalName,
+        "王晨旭的健康证.pdf"
+      );
       const searchResponse = await fetch(
         `${baseUrl}/employee/api/admin/submissions?search=${VALID_ID_CARD_NUMBER}`,
         { headers: authHeaders() }
@@ -270,6 +290,10 @@ test("JPG PNG HEIC HEIF and PDF are accepted only when signatures match", () => 
       ),
     UploadValidationError
   );
+
+  const mojibakeName = Buffer.from("王晨旭的健康证.pdf", "utf8").toString("latin1");
+  assert.equal(normalizeUploadOriginalName(mojibakeName), "王晨旭的健康证.pdf");
+  assert.equal(normalizeUploadOriginalName("café.pdf"), "café.pdf");
 });
 
 test("name phone store and required document validation returns field errors", async () => {

@@ -14,6 +14,7 @@ export const dbFilePath = path.join(dataRoot, "data", "employee-information.db")
 export const uploadsRoot = path.join(dataRoot, "uploads");
 export const dbInitSqlPath = path.join(projectRoot, "db", "init.sql");
 export const publicDir = path.join(projectRoot, "public");
+export const pdfJsBuildDir = path.join(projectRoot, "node_modules", "pdfjs-dist", "build");
 export const adminUsername = process.env.INVOICE_ADMIN_USERNAME || "";
 export const adminPassword = process.env.INVOICE_ADMIN_PASSWORD || "";
 export const idCardModelProvider = (

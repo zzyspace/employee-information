@@ -1,3 +1,5 @@
+import { normalizeUploadOriginalName } from "./file-storage.js";
+
 export function insertAttachmentVersion(db, attachment) {
   db.prepare(
     `INSERT INTO employee_attachment_versions (
@@ -118,7 +120,7 @@ export function serializeAttachment(row) {
   return {
     attachmentVersionId: row.attachment_version_id,
     kind: row.kind,
-    originalName: row.original_name,
+    originalName: normalizeUploadOriginalName(row.original_name),
     contentType: row.content_type,
     sizeBytes: row.size_bytes,
     createdAt: row.created_at,

@@ -46,6 +46,18 @@ export class UploadValidationError extends Error {
   }
 }
 
+export function normalizeUploadOriginalName(value, fallback = "attachment") {
+  const originalName = path.basename(String(value || fallback));
+  if (!/[\u0080-\u00ff]/.test(originalName)) return originalName;
+
+  const decodedName = Buffer.from(originalName, "latin1").toString("utf8");
+  if (!decodedName || decodedName.includes("\ufffd")) return originalName;
+  if (Buffer.from(decodedName, "utf8").toString("latin1") !== originalName) {
+    return originalName;
+  }
+  return decodedName;
+}
+
 function looksLikeJpeg(buffer) {
   return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
 }
@@ -170,7 +182,10 @@ export async function writeAttachmentVersion({
     submissionId,
     kind,
     storagePath,
-    originalName: path.basename(file.originalname || `upload${validated.extension}`),
+    originalName: normalizeUploadOriginalName(
+      file.originalname,
+      `upload${validated.extension}`
+    ),
     contentType: validated.contentType,
     sizeBytes: file.size,
     createdAt: now.toISOString(),

@@ -27,11 +27,12 @@ import {
   idCardModelProvider,
   idCardModelProxyUrl,
   idCardModelTimeoutMs,
+  pdfJsBuildDir,
   publicDir,
   uploadsRoot,
 } from "./config.js";
 import { createDatabase } from "./database.js";
-import { UploadValidationError } from "./file-storage.js";
+import { UploadValidationError, normalizeUploadOriginalName } from "./file-storage.js";
 import {
   IdentityCardRecognitionError,
   createIdentityCardRecognizer,
@@ -68,7 +69,7 @@ function sendNotFound(_request, response) {
 }
 
 function safeDownloadName(name) {
-  return String(name || "attachment")
+  return normalizeUploadOriginalName(name)
     .replace(/[\r\n]/g, " ")
     .replace(/["\\]/g, "-");
 }
@@ -104,6 +105,16 @@ export function createApp({
       .set("X-Content-Type-Options", "nosniff")
       .sendFile(path.join(staticDir, "assets", "finance-wechat-qr.png"));
   });
+
+  for (const assetName of ["pdf.min.mjs", "pdf.worker.min.mjs"]) {
+    app.get(`${PUBLIC_BASE_PATH}/assets/pdfjs/${assetName}`, (_request, response) => {
+      response
+        .set("Cache-Control", "public, max-age=604800")
+        .set("X-Content-Type-Options", "nosniff")
+        .type("text/javascript; charset=utf-8")
+        .sendFile(path.join(pdfJsBuildDir, assetName));
+    });
+  }
 
   for (const storeKey of ALLOWED_STORE_KEYS) {
     app.get(

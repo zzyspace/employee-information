@@ -129,9 +129,13 @@
       .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
       .modal-feedback { margin: 0 0 15px; padding: 12px; border-radius: 12px; background: var(--danger-soft); color: var(--danger); font-size: 13px; }
       .preview-modal { z-index: 70; }
-      .preview-body { min-height: 420px; display: grid; place-items: center; background: #111; }
-      .preview-body img { max-width: 100%; max-height: 70vh; object-fit: contain; }
-      .preview-body iframe { width: 100%; height: 70vh; border: 0; background: white; }
+      .preview-modal .dialog-header { align-items: flex-start; }
+      .preview-modal .dialog-header > div { flex: 1; min-width: 0; }
+      .preview-modal .dialog-header h2 { line-height: 1.35; overflow-wrap: anywhere; }
+      .preview-modal .dialog-header > button { flex: 0 0 auto; min-width: 64px; white-space: nowrap; }
+      .preview-body { min-height: 420px; display: grid; place-items: center; padding: 14px; background: #111; }
+      .preview-body img, .preview-body canvas { display: block; max-width: 100%; max-height: 70vh; margin: auto; border-radius: 12px; object-fit: contain; }
+      .preview-body iframe { width: min(100%, 900px); height: 70vh; margin: auto; border: 0; border-radius: 12px; background: white; }
       .preview-status { color: #ddd; padding: 30px; text-align: center; }
       .download-link { display: inline-flex; margin-top: 10px; color: var(--brand); }
 
@@ -147,6 +151,9 @@
         th:last-child { right: auto; }
         td:last-child { position: static; background: transparent; box-shadow: none; }
         tbody tr:hover td:last-child { background: transparent; }
+        .preview-modal .dialog-header { gap: 12px; }
+        .preview-modal .dialog-header > button { min-width: 58px; padding-inline: 12px; }
+        .preview-body { min-height: 320px; padding: 10px; }
         .modal { padding: 8px; }
         .dialog { max-height: 96vh; border-radius: 19px; }
         .dialog-header, .dialog-body { padding: 17px; }
@@ -185,7 +192,7 @@
 
     <div class="modal" id="edit-modal" hidden><section class="dialog" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2>编辑员工资料</h2><p>保存后会创建新的只读历史版本，旧资料不会被覆盖。</p></div><button data-close="edit-modal" type="button">关闭</button></header><div class="dialog-body"><p id="edit-feedback" class="modal-feedback" hidden></p><form id="edit-form" enctype="multipart/form-data"><input id="edit-id" type="hidden"><div class="edit-grid"><div class="field"><label for="edit-name">姓名</label><input id="edit-name" name="name" maxlength="50" required></div><div class="field"><label for="edit-phone">手机号</label><input id="edit-phone" name="phone" inputmode="numeric" maxlength="11" required></div><div class="field"><label for="edit-position">岗位</label><select id="edit-position" name="position" required><option value="">请选择岗位</option><option value="front_of_house">前厅</option><option value="back_of_house">后厨</option></select></div><div class="field"><label for="edit-store">门店</label><select id="edit-store" name="storeKey"><option value="fuzzy">Fuzzy</option><option value="fuzzy_qz">Fuzzy泉州店</option><option value="peanut">Peanut</option></select></div></div><h3 class="section-heading">替换证件（不选择则保留当前版本）</h3><div class="attachment-list"><label class="file-field"><strong>身份证正面</strong><span class="muted" id="edit-front-current"></span><input name="idCardFront" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><label class="file-field"><strong>身份证反面</strong><span class="muted" id="edit-back-current"></span><input name="idCardBack" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><div class="file-field"><label><strong>健康证</strong><span class="muted" id="edit-health-current"></span><input name="healthCertificate" type="file" accept=".jpg,.jpeg,.png,.heic,.heif,.pdf"></label><label class="checkbox-row" id="remove-health-row"><input id="remove-health" name="removeHealthCertificate" type="checkbox" value="true">移除当前健康证</label></div></div><div class="dialog-actions"><button data-close="edit-modal" type="button">取消</button><button id="edit-submit" class="button-primary" type="submit">保存新版本</button></div></form></div></section></div>
 
-    <div class="modal preview-modal" id="preview-modal" hidden><section class="dialog dialog-wide" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2 id="preview-title">附件预览</h2><p id="preview-meta"></p><a class="download-link" id="preview-download" href="#" download>下载原文件</a></div><button data-close="preview-modal" type="button">关闭</button></header><div class="preview-body"><div class="preview-status" id="preview-status">正在加载附件...</div><img id="preview-image" alt="附件预览" hidden><iframe id="preview-frame" title="PDF 附件预览" sandbox hidden></iframe></div></section></div>
+    <div class="modal preview-modal" id="preview-modal" hidden><section class="dialog dialog-wide" role="dialog" aria-modal="true"><header class="dialog-header"><div><h2 id="preview-title">附件预览</h2><p id="preview-meta"></p><a class="download-link" id="preview-download" href="#" download>下载原文件</a></div><button data-close="preview-modal" type="button">关闭</button></header><div class="preview-body"><div class="preview-status" id="preview-status">正在加载附件...</div><img id="preview-image" alt="附件预览" hidden><canvas id="preview-pdf-canvas" aria-label="PDF 首页预览" hidden></canvas><iframe id="preview-frame" title="PDF 附件预览" sandbox hidden></iframe></div></section></div>
 
     <script>
       (() => {
@@ -202,6 +209,7 @@
         const summaryRange = document.getElementById("summary-range");
         const editForm = document.getElementById("edit-form");
         let previewUrl = "";
+        let pdfJsModulePromise;
 
         function formatDate(value) { if (!value) return "-"; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString("zh-CN", { hour12: false }); }
         function formatTableDate(value) { if (!value) return "-"; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const datePart = date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }); const timePart = date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }); return `${datePart}\n${timePart}`; }
@@ -212,6 +220,74 @@
         function attachmentButton(attachment, label) { if (!attachment) return element("span", "未上传", "muted"); const button = element("button", label); button.type = "button"; button.dataset.previewUrl = attachment.url; button.dataset.previewName = attachment.originalName; button.dataset.previewType = attachment.contentType; button.dataset.previewSize = String(attachment.sizeBytes); return button; }
         function storeTag(key) { return element("span", STORE_LABELS[key] || key, `tag store-${key}`); }
         function statusTag(item) { return element("span", item.deletedAt ? "已删除" : "在用", `tag ${item.deletedAt ? "deleted" : "active"}`); }
+
+        function findPdfContentBounds(context, width, height) {
+          const pixels = context.getImageData(0, 0, width, height).data;
+          let minX = width;
+          let minY = height;
+          let maxX = -1;
+          let maxY = -1;
+          for (let y = 0; y < height; y += 2) {
+            for (let x = 0; x < width; x += 2) {
+              const offset = (y * width + x) * 4;
+              if (pixels[offset + 3] > 12 && Math.min(pixels[offset], pixels[offset + 1], pixels[offset + 2]) < 245) {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+              }
+            }
+          }
+          if (maxX < minX || maxY < minY) return { x: 0, y: 0, width, height };
+          const margin = 20;
+          const x = Math.max(0, minX - margin);
+          const y = Math.max(0, minY - margin);
+          return {
+            x,
+            y,
+            width: Math.min(width, maxX + margin) - x,
+            height: Math.min(height, maxY + margin) - y,
+          };
+        }
+
+        async function renderPdfPreview(blob, canvas) {
+          pdfJsModulePromise ||= import("/employee/assets/pdfjs/pdf.min.mjs");
+          const pdfjs = await pdfJsModulePromise;
+          pdfjs.GlobalWorkerOptions.workerSrc = "/employee/assets/pdfjs/pdf.worker.min.mjs";
+          const loadingTask = pdfjs.getDocument({ data: await blob.arrayBuffer(), isEvalSupported: false });
+          const pdf = await loadingTask.promise;
+          try {
+            const page = await pdf.getPage(1);
+            const initialViewport = page.getViewport({ scale: 1 });
+            const previewBodyWidth = document.querySelector(".preview-body").clientWidth;
+            const renderWidth = Math.min(1800, Math.max(900, previewBodyWidth * 2));
+            const viewport = page.getViewport({ scale: renderWidth / initialViewport.width });
+            const sourceCanvas = document.createElement("canvas");
+            sourceCanvas.width = Math.ceil(viewport.width);
+            sourceCanvas.height = Math.ceil(viewport.height);
+            const sourceContext = sourceCanvas.getContext("2d", { alpha: false });
+            sourceContext.fillStyle = "#fff";
+            sourceContext.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+            await page.render({ canvasContext: sourceContext, viewport }).promise;
+            const bounds = findPdfContentBounds(sourceContext, sourceCanvas.width, sourceCanvas.height);
+            canvas.width = bounds.width;
+            canvas.height = bounds.height;
+            canvas.getContext("2d", { alpha: false }).drawImage(
+              sourceCanvas,
+              bounds.x,
+              bounds.y,
+              bounds.width,
+              bounds.height,
+              0,
+              0,
+              bounds.width,
+              bounds.height
+            );
+            canvas.hidden = false;
+          } finally {
+            await pdf.destroy();
+          }
+        }
 
         function renderRows() {
           body.textContent = "";
@@ -237,7 +313,7 @@
         async function loadRecords() { state.loading = true; setStatus("正在加载..."); updateSummary(); const query = new URLSearchParams({ search: state.search, storeKey: state.storeKey, status: state.status, limit: String(state.limit), offset: String(state.offset) }); try { const payload = await requestJson(`/employee/api/admin/submissions?${query}`); state.total = payload.total || 0; state.items = payload.items || []; renderRows(); setStatus(state.total ? `已加载 ${state.items.length} 条记录。` : "当前没有符合条件的记录。"); } catch (error) { state.total = 0; state.items = []; renderRows(); setStatus(error.message, true); } finally { state.loading = false; updateSummary(); } }
 
         function openModal(id) { document.getElementById(id).hidden = false; document.body.classList.add("modal-open"); }
-        function closeModal(id) { document.getElementById(id).hidden = true; if (![...document.querySelectorAll(".modal")].some((modal) => !modal.hidden)) document.body.classList.remove("modal-open"); if (id === "preview-modal") { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = ""; document.getElementById("preview-image").removeAttribute("src"); document.getElementById("preview-frame").removeAttribute("src"); } }
+        function closeModal(id) { document.getElementById(id).hidden = true; if (![...document.querySelectorAll(".modal")].some((modal) => !modal.hidden)) document.body.classList.remove("modal-open"); if (id === "preview-modal") { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = ""; document.getElementById("preview-image").removeAttribute("src"); document.getElementById("preview-frame").removeAttribute("src"); const pdfCanvas = document.getElementById("preview-pdf-canvas"); pdfCanvas.hidden = true; pdfCanvas.width = 0; pdfCanvas.height = 0; } }
         function renderAttachmentCards(container, attachments) { container.textContent = ""; for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", "健康证"]]) { const attachment = attachments[key]; const card = element("div", "", "attachment-card"); card.appendChild(element("strong", label)); card.appendChild(element("div", attachment ? attachment.originalName : "未上传", "muted")); if (attachment) { card.appendChild(element("div", `${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`, "muted")); card.appendChild(attachmentButton(attachment, "查看附件")); } container.appendChild(card); } }
         async function openDetail(id) { openModal("detail-modal"); const content = document.getElementById("detail-content"); content.textContent = "正在加载..."; try { const [detailPayload, historyPayload] = await Promise.all([requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`), requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}/history`)]); const item = detailPayload.item; document.getElementById("detail-title").textContent = item.name; document.getElementById("detail-subtitle").textContent = `提交 ID ${item.submitId} · 当前版本 v${item.version}`; content.textContent = ""; const grid = element("div", "", "detail-grid"); for (const [label, value] of [["姓名", item.name], ["手机号", item.phone], ["岗位", POSITION_LABELS[item.position] || "未填写"], ["门店", STORE_LABELS[item.storeKey]], ["状态", item.deletedAt ? "已删除" : "在用"], ["提交时间", formatDate(item.createdAt)], ["最近更新", formatDate(item.updatedAt)], ["删除时间", formatDate(item.deletedAt)], ["当前版本", `v${item.version}`]]) { const card = element("div", "", "detail-card"); card.append(element("div", label, "detail-label"), element("div", value || "-", "detail-value")); grid.appendChild(card); } content.appendChild(grid); content.appendChild(element("h3", "当前证件", "section-heading")); const currentAttachments = element("div", "", "attachment-list"); renderAttachmentCards(currentAttachments, item.attachments); content.appendChild(currentAttachments); content.appendChild(element("h3", "版本历史（只读）", "section-heading")); const timeline = element("div", "", "timeline"); for (const revision of historyPayload.items) { const details = element("details", "", "revision"); const summary = document.createElement("summary"); const left = element("strong", `v${revision.version} · ${ACTION_LABELS[revision.action] || revision.action}`); const right = element("span", formatDate(revision.changedAt), "muted"); summary.append(left, right); const revisionBody = element("div", "", "revision-body"); const meta = element("div", "", "revision-meta"); meta.append(element("span", `姓名：${revision.name}`), element("span", `手机号：${revision.phone}`), element("span", `岗位：${POSITION_LABELS[revision.position] || "未填写"}`), element("span", `门店：${STORE_LABELS[revision.storeKey]}`), element("span", `操作人：${revision.actorUsername || "员工提交"}`)); revisionBody.appendChild(meta); const attachments = element("div", "", "attachment-list"); renderAttachmentCards(attachments, revision.attachments); revisionBody.appendChild(attachments); details.append(summary, revisionBody); timeline.appendChild(details); } content.appendChild(timeline); } catch (error) { content.textContent = error.message; } }
 
@@ -247,7 +323,50 @@
         async function deleteRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认把 ${item.name}（${item.phone}）移入回收站？\n\n资料和全部历史附件会保留，可在“已删除”中恢复。`)) return; try { await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}`, { method: "DELETE" }); setStatus("记录已移入回收站。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
         async function restoreRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认恢复 ${item.name}（${item.phone}）？`)) return; try { await requestJson(`/employee/api/admin/submissions/${encodeURIComponent(id)}/restore`, { method: "POST" }); setStatus("记录已恢复。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
 
-        async function openPreview(button) { openModal("preview-modal"); const status = document.getElementById("preview-status"); const image = document.getElementById("preview-image"); const frame = document.getElementById("preview-frame"); status.hidden = false; status.textContent = "正在加载附件..."; image.hidden = true; frame.hidden = true; document.getElementById("preview-title").textContent = button.dataset.previewName || "附件预览"; document.getElementById("preview-meta").textContent = `${button.dataset.previewType || ""} · ${formatBytes(Number(button.dataset.previewSize))}`; try { const response = await fetch(button.dataset.previewUrl); if (!response.ok) { const payload = await response.json().catch(() => ({})); throw new Error(payload?.error?.message || "附件加载失败"); } const blob = await response.blob(); previewUrl = URL.createObjectURL(blob); const download = document.getElementById("preview-download"); download.href = previewUrl; download.download = button.dataset.previewName || "attachment"; const type = (response.headers.get("content-type") || blob.type || button.dataset.previewType || "").split(";")[0]; if (type === "application/pdf") { frame.src = previewUrl; frame.hidden = false; status.hidden = true; } else if (type === "image/jpeg" || type === "image/png") { image.src = previewUrl; image.hidden = false; status.hidden = true; } else { status.innerHTML = "当前浏览器可能无法预览 HEIC/HEIF，请使用上方“下载原文件”。"; } } catch (error) { status.textContent = error.message; } }
+        async function openPreview(button) {
+          openModal("preview-modal");
+          const status = document.getElementById("preview-status");
+          const image = document.getElementById("preview-image");
+          const pdfCanvas = document.getElementById("preview-pdf-canvas");
+          const frame = document.getElementById("preview-frame");
+          status.hidden = false;
+          status.textContent = "正在加载附件...";
+          image.hidden = true;
+          pdfCanvas.hidden = true;
+          frame.hidden = true;
+          document.getElementById("preview-title").textContent = button.dataset.previewName || "附件预览";
+          document.getElementById("preview-meta").textContent = `${button.dataset.previewType || ""} · ${formatBytes(Number(button.dataset.previewSize))}`;
+          try {
+            const response = await fetch(button.dataset.previewUrl);
+            if (!response.ok) {
+              const payload = await response.json().catch(() => ({}));
+              throw new Error(payload?.error?.message || "附件加载失败");
+            }
+            const blob = await response.blob();
+            previewUrl = URL.createObjectURL(blob);
+            const download = document.getElementById("preview-download");
+            download.href = previewUrl;
+            download.download = button.dataset.previewName || "attachment";
+            const type = (response.headers.get("content-type") || blob.type || button.dataset.previewType || "").split(";")[0];
+            if (type === "application/pdf") {
+              try {
+                await renderPdfPreview(blob, pdfCanvas);
+              } catch {
+                frame.src = previewUrl;
+                frame.hidden = false;
+              }
+              status.hidden = true;
+            } else if (type === "image/jpeg" || type === "image/png") {
+              image.src = previewUrl;
+              image.hidden = false;
+              status.hidden = true;
+            } else {
+              status.innerHTML = "当前浏览器可能无法预览 HEIC/HEIF，请使用上方“下载原文件”。";
+            }
+          } catch (error) {
+            status.textContent = error.message;
+          }
+        }
 
         document.getElementById("filter-form").addEventListener("submit", (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); state.search = String(data.get("search") || "").trim(); state.storeKey = String(data.get("storeKey") || ""); state.status = String(data.get("status") || "active"); state.limit = Number(data.get("limit")) || 50; state.offset = 0; loadRecords(); });
         document.getElementById("refresh-button").addEventListener("click", loadRecords);
