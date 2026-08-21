@@ -8,6 +8,10 @@ const nginx = fs.readFileSync(
   path.join(root, "deploy/nginx/employee-information.locations.conf"),
   "utf8",
 );
+const deployScript = fs.readFileSync(
+  path.join(root, "deploy/deploy-employee-information.sh"),
+  "utf8",
+);
 const portalHtml = fs.readFileSync(path.join(root, "public/portal.html"), "utf8");
 
 test("nginx protects employee portal and admin API before the public prefix", () => {
@@ -25,4 +29,11 @@ test("nginx protects employee portal and admin API before the public prefix", ()
 test("employee portal exposes a POST logout action", () => {
   assert.match(portalHtml, /<form class="logout-form" method="post" action="\/admin-logout">/);
   assert.match(portalHtml, /name="returnTo" value="\/employee\/portal"/);
+});
+
+test("employee deployment leaves the shared Nginx entry to server-infra", () => {
+  assert.doesNotMatch(deployScript, /\/etc\/nginx\/sites-(available|enabled)/);
+  assert.doesNotMatch(deployScript, /\/etc\/nginx\/snippets/);
+  assert.doesNotMatch(deployScript, /\bnginx -t\b/);
+  assert.doesNotMatch(deployScript, /systemctl reload nginx/);
 });

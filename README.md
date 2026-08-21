@@ -91,7 +91,7 @@ npm test
 - 数据库和附件：`/var/lib/employee-information`
 - 服务：`employee-information.service`
 - Node 监听：`127.0.0.1:8789`
-- Nginx snippet：`/etc/nginx/snippets/employee-information.locations.conf`
+- Nginx 路由：由独立的 `server-infra` 项目统一管理
 - 共享后台凭据：`/etc/invoice-submit.env`
 - 共享 `wechat-claw` 模型配置：`/etc/wechat-claw.env`
 
@@ -102,10 +102,12 @@ Nginx 对 `/employee/` 的请求体上限为 65MB，允许一次提交三个 20M
 仓库提供：
 
 - `deploy/systemd/employee-information.service`
-- `deploy/nginx/employee-information.locations.conf`
+- `deploy/nginx/employee-information.locations.conf`（迁移前兼容快照）
 - `deploy/deploy-employee-information.sh`
 
-部署脚本只会给现有 `invoice-submit` Nginx site 添加 snippet include，不会用本项目配置覆盖整个站点。服务器必须已经存在 `/opt/employee-information/current` Git checkout。
+部署脚本只管理应用依赖、systemd 服务和健康检查，不写入或 reload Nginx。
+服务器必须已经存在 `/opt/employee-information/current` Git checkout；共享入口由
+`server-infra` 独立发布。
 
 本轮没有执行生产部署。
 
