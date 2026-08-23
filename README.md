@@ -6,19 +6,19 @@
 
 员工页面：
 
-- `/employee/fuzzy`
-- `/employee/fuzzy_qz`
-- `/employee/peanut`
+- `/staff/fuzzy`
+- `/staff/fuzzy-qz`
+- `/staff/peanut`
 
 管理后台：
 
-- `/employee/portal`
+- `/staff`
 - 使用 `INVOICE_ADMIN_USERNAME` 和 `INVOICE_ADMIN_PASSWORD`，与发票后台共用 Basic Auth 凭据。
 - 未配置完整凭据时，后台页面和接口返回 `503`。
 
 健康检查：
 
-- `/employee/healthz`
+- `/health/staff`
 
 ## 业务规则
 
@@ -56,8 +56,8 @@ npm run dev
 打开：
 
 ```text
-http://127.0.0.1:8789/employee/fuzzy
-http://127.0.0.1:8789/employee/portal
+http://127.0.0.1:8789/staff/fuzzy
+http://127.0.0.1:8789/staff
 ```
 
 本地数据默认写入 `.data/`。可通过 `EMPLOYEE_INFORMATION_DATA_ROOT` 修改。
@@ -95,7 +95,7 @@ npm test
 - 共享后台凭据：`/etc/invoice-submit.env`
 - 共享 `wechat-claw` 模型配置：`/etc/wechat-claw.env`
 
-Nginx 对 `/employee/` 的请求体上限为 65MB，允许一次提交三个 20MB 文件并保留 multipart 开销。
+Nginx 对 `/staff/` 的请求体上限为 65MB，允许一次提交三个 20MB 文件并保留 multipart 开销。
 
 ## 部署材料
 

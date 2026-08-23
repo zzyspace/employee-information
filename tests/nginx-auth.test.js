@@ -27,8 +27,8 @@ test("nginx protects employee portal and admin API before the public prefix", ()
 });
 
 test("employee portal exposes a POST logout action", () => {
-  assert.match(portalHtml, /<form class="logout-form" method="post" action="\/admin-logout">/);
-  assert.match(portalHtml, /name="returnTo" value="\/employee\/portal"/);
+  assert.match(portalHtml, /<form class="logout-form" method="post" action="\/logout">/);
+  assert.match(portalHtml, /name="returnTo" value="\/staff"/);
   assert.match(portalHtml, /<nav class="topbar" aria-label="员工中心导航">/);
   assert.match(portalHtml, /<span>员工中心<\/span>/);
   assert.match(portalHtml, /id="theme-icon" aria-hidden="true">🌙<\/span>/);

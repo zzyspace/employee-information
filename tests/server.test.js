@@ -121,7 +121,7 @@ function authHeaders(username = "admin", password = "secret-pass") {
 }
 
 async function submit(baseUrl, options = {}, storeKey = "fuzzy") {
-  return fetch(`${baseUrl}/employee/api/submissions/${storeKey}`, {
+  return fetch(`${baseUrl}/staff/api/submissions/${storeKey}`, {
     method: "POST",
     body: validFormData(options),
   });
@@ -185,7 +185,7 @@ test("only the three store routes expose the form and portal requires auth", asy
   const harness = createHarness();
   try {
     await withServer(harness.app, async (baseUrl) => {
-      for (const route of ["/employee/fuzzy", "/employee/fuzzy_qz", "/employee/peanut"]) {
+      for (const route of ["/staff/fuzzy", "/staff/fuzzy-qz", "/staff/peanut"]) {
         const response = await fetch(`${baseUrl}${route}`);
         assert.equal(response.status, 200);
         const html = await response.text();
@@ -196,29 +196,37 @@ test("only the three store routes expose the form and portal requires auth", asy
         assert.doesNotMatch(html, /name="storeKey"/);
       }
 
-      for (const route of ["/", "/employee", "/employee/index.html", "/employee/portal.html", "/employee/other"]) {
+      const legacyStore = await fetch(`${baseUrl}/employee/fuzzy`);
+      assert.equal(legacyStore.status, 200);
+      assert.match(await legacyStore.text(), /新员工入职信息/);
+
+      for (const route of ["/", "/employee", "/employee/index.html", "/staff/portal.html", "/employee/other"]) {
         assert.equal((await fetch(`${baseUrl}${route}`)).status, 404);
       }
 
-      const health = await fetch(`${baseUrl}/employee/healthz`);
+      const health = await fetch(`${baseUrl}/health/staff`);
       assert.equal(health.status, 200);
       assert.deepEqual(await health.json(), { ok: true });
 
-      const qrCode = await fetch(`${baseUrl}/employee/assets/finance-wechat-qr.png`);
+      const qrCode = await fetch(`${baseUrl}/staff/assets/finance-wechat-qr.png`);
       assert.equal(qrCode.status, 200);
       assert.equal(qrCode.headers.get("content-type"), "image/png");
       assert.equal(qrCode.headers.get("x-content-type-options"), "nosniff");
       assert.ok((await qrCode.arrayBuffer()).byteLength > 0);
 
       for (const assetName of ["pdf.min.mjs", "pdf.worker.min.mjs"]) {
-        const asset = await fetch(`${baseUrl}/employee/assets/pdfjs/${assetName}`);
+        const asset = await fetch(`${baseUrl}/staff/assets/pdfjs/${assetName}`);
         assert.equal(asset.status, 200);
         assert.match(asset.headers.get("content-type"), /javascript/);
         assert.equal(asset.headers.get("x-content-type-options"), "nosniff");
         assert.ok((await asset.arrayBuffer()).byteLength > 100_000);
       }
 
-      assert.equal((await fetch(`${baseUrl}/employee/portal`)).status, 401);
+      assert.equal((await fetch(`${baseUrl}/staff`)).status, 401);
+      assert.equal(
+        (await fetch(`${baseUrl}/staff`, { headers: authHeaders() })).status,
+        200
+      );
       assert.equal(
         (await fetch(`${baseUrl}/employee/portal`, { headers: authHeaders() })).status,
         200
@@ -249,7 +257,7 @@ test("valid submissions retain duplicate phone numbers as independent records", 
       assert.equal(harness.db.prepare("SELECT COUNT(*) AS count FROM employee_attachment_versions").get().count, 5);
       assert.equal(listStoredFiles(harness.uploadsRoot).length, 5);
       const firstDetail = await fetch(
-        `${baseUrl}/employee/api/admin/submissions/${firstPayload.id}`,
+        `${baseUrl}/staff/api/admin/submissions/${firstPayload.id}`,
         { headers: authHeaders() }
       );
       assert.equal(
@@ -257,7 +265,7 @@ test("valid submissions retain duplicate phone numbers as independent records", 
         "王晨旭的健康证.pdf"
       );
       const searchResponse = await fetch(
-        `${baseUrl}/employee/api/admin/submissions?search=${VALID_ID_CARD_NUMBER}`,
+        `${baseUrl}/staff/api/admin/submissions?search=${VALID_ID_CARD_NUMBER}`,
         { headers: authHeaders() }
       );
       const searchPayload = await searchResponse.json();
@@ -317,7 +325,7 @@ test("name phone store and required document validation returns field errors", a
 
       const missingBackData = validFormData();
       missingBackData.delete("idCardBack");
-      const missingBack = await fetch(`${baseUrl}/employee/api/submissions/fuzzy`, {
+      const missingBack = await fetch(`${baseUrl}/staff/api/submissions/fuzzy`, {
         method: "POST",
         body: missingBackData,
       });
@@ -379,7 +387,7 @@ test("admin APIs require configured shared Basic Auth credentials", async () => 
   const unconfigured = createHarness({ adminCredentials: { username: "", password: "" } });
   try {
     await withServer(unconfigured.app, async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/employee/api/admin/submissions`);
+      const response = await fetch(`${baseUrl}/staff/api/admin/submissions`);
       assert.equal(response.status, 503);
       assert.equal(response.headers.get("cache-control"), "no-store");
     });
@@ -390,13 +398,13 @@ test("admin APIs require configured shared Basic Auth credentials", async () => 
   const configured = createHarness();
   try {
     await withServer(configured.app, async (baseUrl) => {
-      assert.equal((await fetch(`${baseUrl}/employee/api/admin/submissions`)).status, 401);
+      assert.equal((await fetch(`${baseUrl}/staff/api/admin/submissions`)).status, 401);
       assert.equal(
-        (await fetch(`${baseUrl}/employee/api/admin/submissions`, { headers: authHeaders("admin", "wrong") })).status,
+        (await fetch(`${baseUrl}/staff/api/admin/submissions`, { headers: authHeaders("admin", "wrong") })).status,
         401
       );
       assert.equal(
-        (await fetch(`${baseUrl}/employee/api/admin/submissions`, { headers: authHeaders() })).status,
+        (await fetch(`${baseUrl}/staff/api/admin/submissions`, { headers: authHeaders() })).status,
         200
       );
     });
@@ -413,7 +421,7 @@ test("editing creates immutable field and attachment history, including removed 
         health: makeFile(pdfBytes(), "health.pdf", "application/pdf"),
       });
       const id = (await created.json()).id;
-      const initial = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, { headers: authHeaders() });
+      const initial = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, { headers: authHeaders() });
       const initialItem = (await initial.json()).item;
       const oldFrontId = initialItem.attachments.idCardFront.attachmentVersionId;
       const oldHealthId = initialItem.attachments.healthCertificate.attachmentVersionId;
@@ -424,7 +432,7 @@ test("editing creates immutable field and attachment history, including removed 
       updateData.set("position", "back_of_house");
       updateData.set("storeKey", "fuzzy_qz");
       updateData.set("idCardFront", makeFile(pdfBytes(), "new-front.pdf", "application/pdf"));
-      const updated = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, {
+      const updated = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, {
         method: "PATCH",
         headers: authHeaders(),
         body: updateData,
@@ -440,7 +448,7 @@ test("editing creates immutable field and attachment history, including removed 
       removeHealthData.set("position", "back_of_house");
       removeHealthData.set("storeKey", "fuzzy_qz");
       removeHealthData.set("removeHealthCertificate", "true");
-      const removed = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, {
+      const removed = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, {
         method: "PATCH",
         headers: authHeaders(),
         body: removeHealthData,
@@ -448,7 +456,7 @@ test("editing creates immutable field and attachment history, including removed 
       assert.equal(removed.status, 200);
       assert.equal((await removed.json()).item.attachments.healthCertificate, null);
 
-      const history = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}/history`, { headers: authHeaders() });
+      const history = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { headers: authHeaders() });
       const historyItems = (await history.json()).items;
       assert.equal(historyItems.length, 3);
       assert.deepEqual(historyItems.map((item) => item.action), ["updated", "updated", "created"]);
@@ -458,7 +466,7 @@ test("editing creates immutable field and attachment history, including removed 
       assert.equal(historyItems[2].attachments.healthCertificate.attachmentVersionId, oldHealthId);
 
       for (const attachmentId of [oldFrontId, oldHealthId]) {
-        const attachment = await fetch(`${baseUrl}/employee/api/admin/attachments/${attachmentId}`, { headers: authHeaders() });
+        const attachment = await fetch(`${baseUrl}/staff/api/admin/attachments/${attachmentId}`, { headers: authHeaders() });
         assert.equal(attachment.status, 200);
         assert.equal(attachment.headers.get("cache-control"), "no-store");
         assert.equal(attachment.headers.get("x-content-type-options"), "nosniff");
@@ -479,12 +487,12 @@ test("soft deletion hides records, preserves files, blocks edits, and can restor
       const id = (await created.json()).id;
       const fileCount = listStoredFiles(harness.uploadsRoot).length;
 
-      const deleted = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, { method: "DELETE", headers: authHeaders() });
+      const deleted = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, { method: "DELETE", headers: authHeaders() });
       assert.equal(deleted.status, 200);
       assert.ok((await deleted.json()).item.deletedAt);
 
-      const active = await fetch(`${baseUrl}/employee/api/admin/submissions?status=active`, { headers: authHeaders() });
-      const deletedList = await fetch(`${baseUrl}/employee/api/admin/submissions?status=deleted`, { headers: authHeaders() });
+      const active = await fetch(`${baseUrl}/staff/api/admin/submissions?status=active`, { headers: authHeaders() });
+      const deletedList = await fetch(`${baseUrl}/staff/api/admin/submissions?status=deleted`, { headers: authHeaders() });
       assert.equal((await active.json()).total, 0);
       assert.equal((await deletedList.json()).total, 1);
       assert.equal(listStoredFiles(harness.uploadsRoot).length, fileCount);
@@ -494,19 +502,19 @@ test("soft deletion hides records, preserves files, blocks edits, and can restor
       updateData.set("phone", "13800000000");
       updateData.set("position", "front_of_house");
       updateData.set("storeKey", "fuzzy");
-      const blockedEdit = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}`, { method: "PATCH", headers: authHeaders(), body: updateData });
+      const blockedEdit = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, { method: "PATCH", headers: authHeaders(), body: updateData });
       assert.equal(blockedEdit.status, 409);
 
-      const restored = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}/restore`, { method: "POST", headers: authHeaders() });
+      const restored = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/restore`, { method: "POST", headers: authHeaders() });
       assert.equal(restored.status, 200);
       const restoredItem = (await restored.json()).item;
       assert.equal(restoredItem.deletedAt, null);
       assert.equal(restoredItem.version, 3);
 
-      const history = await fetch(`${baseUrl}/employee/api/admin/submissions/${id}/history`, { headers: authHeaders() });
+      const history = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { headers: authHeaders() });
       assert.deepEqual((await history.json()).items.map((item) => item.action), ["restored", "deleted", "created"]);
       assert.equal(listStoredFiles(harness.uploadsRoot).length, fileCount);
-      assert.equal((await fetch(`${baseUrl}/employee/api/admin/submissions/${id}/history`, { method: "DELETE", headers: authHeaders() })).status, 404);
+      assert.equal((await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { method: "DELETE", headers: authHeaders() })).status, 404);
     });
   } finally {
     harness.close();

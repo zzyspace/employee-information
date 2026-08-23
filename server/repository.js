@@ -124,7 +124,7 @@ export function serializeAttachment(row) {
     contentType: row.content_type,
     sizeBytes: row.size_bytes,
     createdAt: row.created_at,
-    url: `/employee/api/admin/attachments/${encodeURIComponent(row.attachment_version_id)}`,
+    url: `/staff/api/admin/attachments/${encodeURIComponent(row.attachment_version_id)}`,
   };
 }
 

@@ -389,7 +389,7 @@
           </header>
           <div class="wechat-content">
             <div class="wechat-qr-frame">
-              <img class="wechat-qr" src="/employee/assets/finance-wechat-qr.png" alt="财务微信二维码" width="248" height="248" />
+              <img class="wechat-qr" src="/staff/assets/finance-wechat-qr.png" alt="财务微信二维码" width="248" height="248" />
             </div>
             <label class="wechat-confirmation" for="wechat-confirmed">
               <input id="wechat-confirmed" name="wechatConfirmed" type="checkbox" required />
@@ -420,9 +420,9 @@
         const PHONE_PATTERN = /^1[3-9]\d{9}$/;
         const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "heic", "heif", "pdf"]);
         const routeMap = new Map([
-          ["/employee/fuzzy", "fuzzy"],
-          ["/employee/fuzzy_qz", "fuzzy_qz"],
-          ["/employee/peanut", "peanut"],
+          ["/staff/fuzzy", "fuzzy"],
+          ["/staff/fuzzy-qz", "fuzzy_qz"],
+          ["/staff/peanut", "peanut"],
         ]);
         const form = document.getElementById("employee-form");
         const nameInput = document.getElementById("name");
@@ -575,7 +575,8 @@
           submitButton.disabled = true;
           submitButton.textContent = "提交中...";
           try {
-            const response = await fetch(`/employee/api/submissions/${encodeURIComponent(storeKey)}`, { method: "POST", body: new FormData(form) });
+            const storeSlug = storeKey === "fuzzy_qz" ? "fuzzy-qz" : storeKey;
+            const response = await fetch(`/staff/api/submissions/${encodeURIComponent(storeSlug)}`, { method: "POST", body: new FormData(form) });
             const payload = await response.json().catch(() => null);
             if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "提交失败，请稍后重试。");
             form.reset();

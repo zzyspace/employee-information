@@ -43,7 +43,13 @@ import {
   createEmployeeSubmission,
 } from "./submissions.js";
 
-const PUBLIC_BASE_PATH = "/employee";
+const PUBLIC_BASE_PATH = "/staff";
+const LEGACY_BASE_PATH = "/employee";
+const STORE_ROUTE_SLUGS = new Map([
+  ["fuzzy", "fuzzy"],
+  ["fuzzy_qz", "fuzzy-qz"],
+  ["peanut", "peanut"],
+]);
 const uploadFields = [
   { name: "idCardFront", maxCount: 1 },
   { name: "idCardBack", maxCount: 1 },
@@ -95,11 +101,14 @@ export function createApp({
 
   app.disable("x-powered-by");
 
-  app.get(`${PUBLIC_BASE_PATH}/healthz`, (_request, response) => {
+  app.get(["/health/staff", `${PUBLIC_BASE_PATH}/healthz`, `${LEGACY_BASE_PATH}/healthz`], (_request, response) => {
     response.status(200).json({ ok: true });
   });
 
-  app.get(`${PUBLIC_BASE_PATH}/assets/finance-wechat-qr.png`, (_request, response) => {
+  app.get([
+    `${PUBLIC_BASE_PATH}/assets/finance-wechat-qr.png`,
+    `${LEGACY_BASE_PATH}/assets/finance-wechat-qr.png`,
+  ], (_request, response) => {
     response
       .set("Cache-Control", "public, max-age=3600")
       .set("X-Content-Type-Options", "nosniff")
@@ -107,7 +116,10 @@ export function createApp({
   });
 
   for (const assetName of ["pdf.min.mjs", "pdf.worker.min.mjs"]) {
-    app.get(`${PUBLIC_BASE_PATH}/assets/pdfjs/${assetName}`, (_request, response) => {
+    app.get([
+      `${PUBLIC_BASE_PATH}/assets/pdfjs/${assetName}`,
+      `${LEGACY_BASE_PATH}/assets/pdfjs/${assetName}`,
+    ], (_request, response) => {
       response
         .set("Cache-Control", "public, max-age=604800")
         .set("X-Content-Type-Options", "nosniff")
@@ -117,18 +129,29 @@ export function createApp({
   }
 
   for (const storeKey of ALLOWED_STORE_KEYS) {
+    const routeSlug = STORE_ROUTE_SLUGS.get(storeKey);
     app.get(
-      [`${PUBLIC_BASE_PATH}/${storeKey}`, `${PUBLIC_BASE_PATH}/${storeKey}/`],
+      [`${PUBLIC_BASE_PATH}/${routeSlug}`, `${PUBLIC_BASE_PATH}/${routeSlug}/`],
+      (_request, response) => response.sendFile(path.join(staticDir, "index.html"))
+    );
+    app.get(
+      [`${LEGACY_BASE_PATH}/${storeKey}`, `${LEGACY_BASE_PATH}/${storeKey}/`],
       (_request, response) => response.sendFile(path.join(staticDir, "index.html"))
     );
   }
 
-  app.post(`${PUBLIC_BASE_PATH}/api/submissions/:storeKey`, parseEmployeeFiles, async (request, response, next) => {
+  app.post([
+    `${PUBLIC_BASE_PATH}/api/submissions/:storeKey`,
+    `${LEGACY_BASE_PATH}/api/submissions/:storeKey`,
+  ], parseEmployeeFiles, async (request, response, next) => {
     try {
+      const storeKey = request.params.storeKey === "fuzzy-qz"
+        ? "fuzzy_qz"
+        : request.params.storeKey;
       const result = await createEmployeeSubmission({
         body: request.body,
         files: request.files,
-        storeKey: request.params.storeKey,
+        storeKey,
         db,
         uploadsRoot: uploadDirectory,
         identityCardRecognizer,
@@ -139,13 +162,20 @@ export function createApp({
     }
   });
 
-  app.get([`${PUBLIC_BASE_PATH}/portal`, `${PUBLIC_BASE_PATH}/portal/`], adminAuth, (_request, response) => {
+  app.get([PUBLIC_BASE_PATH, `${PUBLIC_BASE_PATH}/`], adminAuth, (_request, response) => {
     response.sendFile(path.join(staticDir, "portal.html"));
   });
 
-  app.use(`${PUBLIC_BASE_PATH}/api/admin`, adminAuth);
+  app.get([`${LEGACY_BASE_PATH}/portal`, `${LEGACY_BASE_PATH}/portal/`], adminAuth, (_request, response) => {
+    response.sendFile(path.join(staticDir, "portal.html"));
+  });
 
-  app.get(`${PUBLIC_BASE_PATH}/api/admin/submissions`, (request, response, next) => {
+  app.use([`${PUBLIC_BASE_PATH}/api/admin`, `${LEGACY_BASE_PATH}/api/admin`], adminAuth);
+
+  app.get([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions`,
+  ], (request, response, next) => {
     try {
       response.status(200).json({
         success: true,
@@ -156,7 +186,10 @@ export function createApp({
     }
   });
 
-  app.get(`${PUBLIC_BASE_PATH}/api/admin/submissions/:id`, (request, response, next) => {
+  app.get([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
+  ], (request, response, next) => {
     try {
       const item = getEmployeeSubmissionDetail(db, request.params.id);
       if (!item) {
@@ -168,7 +201,10 @@ export function createApp({
     }
   });
 
-  app.get(`${PUBLIC_BASE_PATH}/api/admin/submissions/:id/history`, (request, response, next) => {
+  app.get([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions/:id/history`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions/:id/history`,
+  ], (request, response, next) => {
     try {
       const items = getEmployeeSubmissionHistory(db, request.params.id);
       if (!items) {
@@ -180,7 +216,10 @@ export function createApp({
     }
   });
 
-  app.get(`${PUBLIC_BASE_PATH}/api/admin/attachments/:attachmentVersionId`, (request, response, next) => {
+  app.get([
+    `${PUBLIC_BASE_PATH}/api/admin/attachments/:attachmentVersionId`,
+    `${LEGACY_BASE_PATH}/api/admin/attachments/:attachmentVersionId`,
+  ], (request, response, next) => {
     try {
       const attachment = getAdminAttachment(db, request.params.attachmentVersionId);
       if (!attachment) {
@@ -198,7 +237,10 @@ export function createApp({
     }
   });
 
-  app.patch(`${PUBLIC_BASE_PATH}/api/admin/submissions/:id`, parseEmployeeFiles, async (request, response, next) => {
+  app.patch([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
+  ], parseEmployeeFiles, async (request, response, next) => {
     try {
       const item = await updateEmployeeSubmission({
         db,
@@ -214,7 +256,10 @@ export function createApp({
     }
   });
 
-  app.delete(`${PUBLIC_BASE_PATH}/api/admin/submissions/:id`, (request, response, next) => {
+  app.delete([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
+  ], (request, response, next) => {
     try {
       const item = softDeleteEmployeeSubmission({
         db,
@@ -228,7 +273,10 @@ export function createApp({
     }
   });
 
-  app.post(`${PUBLIC_BASE_PATH}/api/admin/submissions/:id/restore`, (request, response, next) => {
+  app.post([
+    `${PUBLIC_BASE_PATH}/api/admin/submissions/:id/restore`,
+    `${LEGACY_BASE_PATH}/api/admin/submissions/:id/restore`,
+  ], (request, response, next) => {
     try {
       const item = restoreEmployeeSubmission({
         db,
@@ -284,4 +332,4 @@ export function createApp({
   return app;
 }
 
-export { PUBLIC_BASE_PATH };
+export { LEGACY_BASE_PATH, PUBLIC_BASE_PATH };
