@@ -29,6 +29,14 @@ test("nginx protects employee portal and admin API before the public prefix", ()
 test("employee portal exposes a POST logout action", () => {
   assert.match(portalHtml, /<form class="logout-form" method="post" action="\/admin-logout">/);
   assert.match(portalHtml, /name="returnTo" value="\/employee\/portal"/);
+  assert.match(portalHtml, /<nav class="topbar" aria-label="员工中心导航">/);
+  assert.match(portalHtml, /<span>员工中心<\/span>/);
+  assert.match(portalHtml, /id="theme-icon" aria-hidden="true">🌙<\/span>/);
+  assert.match(portalHtml, /themeIcon\.textContent = normalizedTheme === "dark" \? "☀️" : "🌙"/);
+  assert.match(portalHtml, /window\.localStorage\.setItem\(THEME_STORAGE_KEY, normalizedTheme\)/);
+  assert.match(portalHtml, /\.topbar \{[^}]*min-height: 52px;[^}]*border-radius: 13px;/s);
+  assert.match(portalHtml, /\.hero \{[^}]*align-content: center;[^}]*min-height: 145px;[^}]*margin: 0 -14px 0;[^}]*padding: 0 48px;/s);
+  assert.doesNotMatch(portalHtml, /class="hero-art"/);
 });
 
 test("employee deployment leaves the shared Nginx entry to server-infra", () => {

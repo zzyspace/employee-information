@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <title>新员工入职信息</title>
+    <script>
+      (() => {
+        let savedTheme = null;
+        try {
+          savedTheme = window.localStorage.getItem("employee-portal-theme");
+        } catch {
+          // Storage may be unavailable in privacy-restricted browser contexts.
+        }
+        const theme = savedTheme === "light" || savedTheme === "dark"
+          ? savedTheme
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
     <style>
       :root {
         color-scheme: light;
@@ -30,26 +45,24 @@
         --radius-md: 16px;
       }
 
-      @media (prefers-color-scheme: dark) {
-        :root {
-          color-scheme: dark;
-          --page: #0f1115;
-          --surface: #1d2026;
-          --surface-soft: #262a31;
-          --ink: #f1f4f8;
-          --muted: #a4adba;
-          --faint: #737e8d;
-          --line: rgba(255, 255, 255, 0.09);
-          --brand: #4da3ff;
-          --brand-soft: rgba(77, 163, 255, 0.16);
-          --required-bg: #4a3026;
-          --required-ink: #ffc3a8;
-          --danger: #ffb4aa;
-          --danger-bg: #492722;
-          --success: #a7e3c3;
-          --success-bg: #18382a;
-          --shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
-        }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page: #0f1115;
+        --surface: #1d2026;
+        --surface-soft: #262a31;
+        --ink: #f1f4f8;
+        --muted: #a4adba;
+        --faint: #737e8d;
+        --line: rgba(255, 255, 255, 0.09);
+        --brand: #4da3ff;
+        --brand-soft: rgba(77, 163, 255, 0.16);
+        --required-bg: #4a3026;
+        --required-ink: #ffc3a8;
+        --danger: #ffb4aa;
+        --danger-bg: #492722;
+        --success: #a7e3c3;
+        --success-bg: #18382a;
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
       }
 
       * { box-sizing: border-box; }
@@ -69,22 +82,16 @@
       body.has-modal { overflow: hidden; }
       button, input { font: inherit; }
 
-      .stage { width: min(100%, 760px); margin: 0 auto; padding: 70px 22px 54px; }
-      .hero { padding: 0 6px 34px; }
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 18px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-      }
-      .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--brand); border-radius: 99px; }
-      h1 { margin: 0; font-size: 40px; line-height: 1.02; letter-spacing: -.055em; }
-      .hero p { margin: 22px 0 0; max-width: 640px; color: var(--muted); font-size: 16px; line-height: 1.75; }
+      .stage { width: min(100%, 760px); margin: 0 auto; padding: 14px 22px 54px; }
+      .topbar { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 13px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 12px 32px rgba(30, 70, 120, .08); backdrop-filter: blur(20px); }
+      .brand-lockup { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 15px; font-weight: 700; text-decoration: none; }
+      .brand-lockup svg { width: 22px; height: 22px; color: var(--brand); }
+      .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-width: 36px; min-height: 36px; padding: 0; border: 1px solid transparent; border-radius: 10px; background: var(--surface-soft); color: var(--ink); cursor: pointer; }
+      .theme-icon { display: grid; place-items: center; width: 24px; height: 24px; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; font-size: 20px; line-height: 1; }
+      .hero { display: grid; align-content: center; min-height: 145px; margin: 0 -14px 0; padding: 0 48px; overflow: hidden; }
+      .hero-copy { display: grid; justify-items: start; }
+      h1 { margin: 0 0 10px; font-size: clamp(34px, 5vw, 44px); line-height: 1.08; letter-spacing: -.055em; }
+      .hero p { margin: 0; max-width: 640px; color: var(--muted); font-size: 15px; line-height: 1.55; }
 
       .form-stack { display: grid; gap: 18px; }
       .section-card, .footer-card {
@@ -251,8 +258,10 @@
       .success-panel p { margin: 13px 0 24px; color: var(--muted); line-height: 1.7; }
 
       @media (max-width: 620px) {
-        .stage { padding: 46px 14px 34px; }
-        .hero { padding-inline: 8px; }
+        .stage { padding: 8px 14px 34px; }
+        .hero { min-height: 170px; margin: -10px -10px 0; padding: 0 23px; }
+        h1 { margin-bottom: 14px; font-size: clamp(29px, 8.5vw, 38px); }
+        .hero p { font-size: 13px; line-height: 1.75; }
         .section-card { padding: 23px 18px; border-radius: 25px; }
         .section-header { gap: 12px; }
         .badge-num { flex-basis: 42px; width: 42px; height: 42px; }
@@ -264,11 +273,26 @@
   </head>
   <body>
     <main class="stage">
-      <section class="hero">
-        <div class="eyebrow">Employee Onboarding</div>
-        <h1>新员工入职信息</h1>
-        <p>请准确填写基本信息，并上传清晰、完整的证件资料。带“必填”标记的项目提交前需要全部完成。</p>
-      </section>
+      <nav class="topbar" aria-label="员工中心导航">
+        <a class="brand-lockup" href="#employee-form" aria-label="前往入职信息表单">
+          <svg viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="3.5" width="19" height="25" rx="3" />
+            <path d="M11 10h9M11 15h9M11 20h5" />
+            <circle cx="23.5" cy="23.5" r="4" fill="var(--surface)" />
+            <circle cx="23.5" cy="22.3" r="1.1" />
+            <path d="M21.8 25.5c.4-1.2 1-1.8 1.7-1.8s1.3.6 1.7 1.8" />
+          </svg>
+          <span>员工中心</span>
+        </a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换到深色模式" aria-pressed="false"><span class="theme-icon" id="theme-icon" aria-hidden="true">🌙</span></button>
+      </nav>
+
+      <header class="hero">
+        <div class="hero-copy">
+          <h1>新员工入职信息</h1>
+          <p>请准确填写基本信息，并上传清晰、完整的证件资料。带“必填”标记的项目提交前需要全部完成。</p>
+        </div>
+      </header>
 
       <form id="employee-form" class="form-stack" novalidate enctype="multipart/form-data">
         <section class="section-card">
@@ -391,6 +415,7 @@
 
     <script>
       (() => {
+        const THEME_STORAGE_KEY = "employee-portal-theme";
         const MAX_FILE_BYTES = 20 * 1024 * 1024;
         const PHONE_PATTERN = /^1[3-9]\d{9}$/;
         const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "heic", "heif", "pdf"]);
@@ -408,7 +433,30 @@
         const submitButton = document.getElementById("submit-button");
         const successModal = document.getElementById("success-modal");
         const successClose = document.getElementById("success-close");
+        const themeToggle = document.getElementById("theme-toggle");
+        const themeIcon = document.getElementById("theme-icon");
         const previewUrls = new Map();
+
+        function readSavedTheme() {
+          try {
+            const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+            return savedTheme === "light" || savedTheme === "dark" ? savedTheme : null;
+          } catch {
+            return null;
+          }
+        }
+
+        function applyTheme(theme, persist = false) {
+          const normalizedTheme = theme === "dark" ? "dark" : "light";
+          document.documentElement.dataset.theme = normalizedTheme;
+          document.documentElement.style.colorScheme = normalizedTheme;
+          themeIcon.textContent = normalizedTheme === "dark" ? "☀️" : "🌙";
+          themeToggle.setAttribute("aria-label", normalizedTheme === "dark" ? "切换到浅色模式" : "切换到深色模式");
+          themeToggle.setAttribute("aria-pressed", String(normalizedTheme === "dark"));
+          if (persist) {
+            try { window.localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme); } catch { /* Ignore. */ }
+          }
+        }
 
         function normalizedPath() {
           return window.location.pathname.replace(/\/+$/, "") || "/";
@@ -500,6 +548,11 @@
           window.open("", "_self");
           window.close();
         });
+
+        const systemThemePreference = window.matchMedia("(prefers-color-scheme: dark)");
+        applyTheme(document.documentElement.dataset.theme || (systemThemePreference.matches ? "dark" : "light"));
+        themeToggle.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true));
+        systemThemePreference.addEventListener("change", (event) => { if (!readSavedTheme()) applyTheme(event.matches ? "dark" : "light"); });
 
         form.addEventListener("submit", async (event) => {
           event.preventDefault();

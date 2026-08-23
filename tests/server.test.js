@@ -190,6 +190,9 @@ test("only the three store routes expose the form and portal requires auth", asy
         assert.equal(response.status, 200);
         const html = await response.text();
         assert.match(html, /新员工入职信息/);
+        assert.match(html, /<nav class="topbar" aria-label="员工中心导航">/);
+        assert.match(html, /id="theme-icon" aria-hidden="true">🌙<\/span>/);
+        assert.match(html, /themeIcon\.textContent = normalizedTheme === "dark" \? "☀️" : "🌙"/);
         assert.doesNotMatch(html, /name="storeKey"/);
       }
 
