@@ -31,6 +31,14 @@ test("employee portal exposes a POST logout action", () => {
   assert.match(portalHtml, /name="returnTo" value="\/staff"/);
   assert.match(portalHtml, /<nav class="topbar" aria-label="员工中心导航">/);
   assert.match(portalHtml, /<span>员工中心<\/span>/);
+  assert.match(portalHtml, /id="center-switcher" hidden/);
+  assert.match(portalHtml, /href="\/expense"/);
+  assert.match(portalHtml, /href="\/invoice"/);
+  assert.match(portalHtml, /href="\/staff" aria-current="page"/);
+  assert.match(portalHtml, /\.center-switcher-option\[aria-current="page"\] \{ background: var\(--brand-soft\); \}/);
+  assert.match(portalHtml, /M8 7V5\.5A2\.5 2\.5 0 0 1 10\.5 3H22/);
+  assert.match(portalHtml, /payload\?\.scopes\?\.invoice\?\.role === "admin"/);
+  assert.match(portalHtml, /centerSwitcherBackdrop\.addEventListener\("click"/);
   assert.match(portalHtml, /id="theme-icon" aria-hidden="true">🌙<\/span>/);
   assert.match(portalHtml, /themeIcon\.textContent = normalizedTheme === "dark" \? "☀️" : "🌙"/);
   assert.match(portalHtml, /window\.localStorage\.setItem\(THEME_STORAGE_KEY, normalizedTheme\)/);
