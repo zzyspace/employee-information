@@ -13,6 +13,9 @@ Environment=EMPLOYEE_INFORMATION_HOST=127.0.0.1
 Environment=EMPLOYEE_INFORMATION_DATA_ROOT=/var/lib/employee-information
 EnvironmentFile=-/etc/invoice-submit.env
 EnvironmentFile=-/etc/wechat-claw.env
+# Shared transport secret and per-application migration mode.
+EnvironmentFile=-/etc/admin-auth-internal.env
+EnvironmentFile=-/etc/admin-auth-staff-mode.env
 ExecStart=/usr/bin/node /opt/employee-information/current/server/index.js
 Restart=always
 RestartSec=3

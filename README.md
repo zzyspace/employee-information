@@ -125,3 +125,17 @@ Nginx 对 `/staff/` 的请求体上限为 65MB，允许一次提交三个 20MB �
 ## HTTP 风险
 
 当前目标入口使用公网 HTTP。身份证、健康证、手机号以及 Basic Auth 密码在 HTTP 传输过程中没有加密；`no-store`、文件权限和后台鉴权无法消除这一风险。正式收集真实资料前应优先配置 HTTPS。
+
+## Unified admin authorization (opt-in)
+
+The admin service defaults to `ADMIN_AUTH_MODE=legacy`. In `unified` mode it
+resolves the Cookie against the loopback Gateway on every request, enforces
+application permissions and data scopes, and never falls back to Basic Auth.
+Set the backend-only `ADMIN_AUTH_GATEWAY_URL` and `ADMIN_AUTH_INTERNAL_TOKEN`
+in `/etc/admin-auth-internal.env`; select the mode in
+`/etc/admin-auth-staff-mode.env`. Only the admin service consumes these overrides.
+Deploy the updated Gateway in legacy mode before changing the shared staff
+Nginx route. Enable unified mode across Gateway and all three backends in one
+coordinated maintenance window after account mapping and UI validation.
+Account-management navigation and permission-aware controls are implemented locally.
+Production cutover remains pending.

@@ -201,7 +201,9 @@
         .dialog { max-height: 96vh; border-radius: 19px; }
         .dialog-header, .dialog-body { padding: 17px; }
       }
-    </style>
+    [hidden] { display: none !important; }
+.center-switcher-trigger:disabled { opacity: 1; color: inherit; cursor: default; }
+</style>
   </head>
   <body>
     <main class="page">
@@ -289,8 +291,28 @@
         let pdfJsModulePromise;
 
         function closeCenterSwitcher({ restoreFocus = false } = {}) { centerSwitcher.classList.remove("is-open"); centerSwitcherTrigger.setAttribute("aria-expanded", "false"); centerSwitcherMenu.hidden = true; centerSwitcherBackdrop.hidden = true; document.body.classList.remove("switcher-open"); if (restoreFocus) centerSwitcherTrigger.focus(); }
-        function openCenterSwitcher() { centerSwitcher.classList.add("is-open"); centerSwitcherTrigger.setAttribute("aria-expanded", "true"); centerSwitcherMenu.hidden = false; centerSwitcherBackdrop.hidden = false; document.body.classList.add("switcher-open"); centerSwitcherMenu.querySelector("[aria-current='page']")?.focus(); }
-        async function enableCenterSwitcherForAdmin() { try { const response = await fetch("/auth/api/session", { headers: { Accept: "application/json" } }); const payload = await response.json(); centerSwitcher.hidden = !(response.ok && payload?.scopes?.invoice?.role === "admin"); } catch { centerSwitcher.hidden = true; } }
+        function openCenterSwitcher() { if (centerSwitcherTrigger.disabled) return; centerSwitcher.classList.add("is-open"); centerSwitcherTrigger.setAttribute("aria-expanded", "true"); centerSwitcherMenu.hidden = false; centerSwitcherBackdrop.hidden = false; document.body.classList.add("switcher-open"); centerSwitcherMenu.querySelector("[aria-current='page']")?.focus(); }
+
+      async function loadAuthorizedCenters(container, trigger, menu, currentApp) {
+        container.hidden = false;
+        trigger.disabled = true;
+        trigger.querySelector(".center-switcher-chevron")?.setAttribute("hidden", "");
+        try {
+          const response = await fetch("/auth/api/session", { headers: { Accept: "application/json" } });
+          const payload = await response.json();
+          if (!response.ok) return;
+          const allowed = payload.apps || [];
+          for (const link of menu.querySelectorAll("[data-center]")) link.hidden = !allowed.includes(link.dataset.center);
+          if (payload.canManageAccounts && !menu.querySelector('[data-management]')) {
+            const link = document.createElement("a"); link.href = "/auth/accounts"; link.className = "center-switcher-option"; link.dataset.management = "true"; link.setAttribute("role", "menuitem"); link.textContent = "账号管理"; menu.appendChild(link);
+          }
+          trigger.disabled = allowed.filter((app) => app !== currentApp).length === 0 && !payload.canManageAccounts;
+        } catch { /* Keep the current center label, with switching disabled. */ }
+        const arrow = trigger.querySelector(".center-switcher-chevron");
+        if (arrow) arrow.hidden = trigger.disabled;
+      }
+
+      async function enableCenterSwitcherForAdmin() { await loadAuthorizedCenters(centerSwitcher, centerSwitcherTrigger, centerSwitcherMenu, "staff"); }
 
         function readSavedTheme() {
           try {
@@ -405,27 +427,43 @@
             row.children[9].appendChild(statusTag(item));
             const actions = element("div", "", "actions");
             const detail = element("button", "详情 / 历史"); detail.dataset.action = "detail"; detail.dataset.id = item.id; actions.appendChild(detail);
-            if (item.deletedAt) { const restore = element("button", "恢复", "button-success"); restore.dataset.action = "restore"; restore.dataset.id = item.id; actions.appendChild(restore); }
-            else { const edit = element("button", "编辑"); edit.dataset.action = "edit"; edit.dataset.id = item.id; const remove = element("button", "删除", "button-danger"); remove.dataset.action = "delete"; remove.dataset.id = item.id; actions.append(edit, remove); }
+            if (item.deletedAt) { const restore = element("button", "恢复", "button-success"); restore.dataset.action = "restore"; restore.dataset.id = item.id; if (can("employee:restore")) actions.appendChild(restore); }
+            else { const edit = element("button", "编辑"); edit.dataset.action = "edit"; edit.dataset.id = item.id; const remove = element("button", "删除", "button-danger"); remove.dataset.action = "delete"; remove.dataset.id = item.id; if (can("employee:edit")) actions.append(edit); if (can("employee:delete")) actions.append(remove); }
             row.children[10].appendChild(actions);
+            for (const control of row.querySelectorAll("[data-preview-url]")) control.hidden = !can("attachment:view");
             body.appendChild(row);
           }
         }
         function updateSummary() { const start = state.total ? state.offset + 1 : 0; const end = state.offset + state.items.length; summaryCount.textContent = `${state.total} 条记录`; summaryRange.textContent = `${start} - ${end}`; prevButton.disabled = state.loading || state.offset === 0; nextButton.disabled = state.loading || end >= state.total; emptyState.hidden = state.items.length > 0; }
-        async function loadRecords() { state.loading = true; setStatus("正在加载..."); updateSummary(); const query = new URLSearchParams({ search: state.search, storeKey: state.storeKey, status: state.status, limit: String(state.limit), offset: String(state.offset) }); try { const payload = await requestJson(`/staff/api/admin/submissions?${query}`); state.total = payload.total || 0; state.items = payload.items || []; renderRows(); setStatus(state.total ? `已加载 ${state.items.length} 条记录。` : "当前没有符合条件的记录。"); } catch (error) { state.total = 0; state.items = []; renderRows(); setStatus(error.message, true); } finally { state.loading = false; updateSummary(); } }
+
+      let grantedPermissions = new Set();
+      const can = (permission) => grantedPermissions.has(permission);
+      async function loadPermissions() {
+        try {
+          const response = await fetch("/staff/api/admin/session");
+          const payload = await response.json();
+          if (!response.ok || !payload.success) throw new Error(payload.error?.message || "权限加载失败，请重新登录。");
+          grantedPermissions = new Set(payload.permissions || []);
+          for (const option of document.querySelectorAll('select[name="storeKey"] option, #edit-store option')) {
+            if (option.value && option.value !== "all") option.disabled = payload.stores !== "all" && !payload.stores.includes(option.value);
+          }
+          return true;
+        } catch (error) { grantedPermissions.clear(); state.items = []; renderRows(); setStatus(error.message, true); return false; }
+      }
+        async function loadRecords() { if (!(await loadPermissions())) return; state.loading = true; setStatus("正在加载..."); updateSummary(); const query = new URLSearchParams({ search: state.search, storeKey: state.storeKey, status: state.status, limit: String(state.limit), offset: String(state.offset) }); try { const payload = await requestJson(`/staff/api/admin/submissions?${query}`); state.total = payload.total || 0; state.items = payload.items || []; renderRows(); setStatus(state.total ? `已加载 ${state.items.length} 条记录。` : "当前没有符合条件的记录。"); } catch (error) { state.total = 0; state.items = []; renderRows(); setStatus(error.message, true); } finally { state.loading = false; updateSummary(); } }
 
         function openModal(id) { document.getElementById(id).hidden = false; document.body.classList.add("modal-open"); }
         function closeModal(id) { document.getElementById(id).hidden = true; if (![...document.querySelectorAll(".modal")].some((modal) => !modal.hidden)) document.body.classList.remove("modal-open"); if (id === "preview-modal") { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = ""; document.getElementById("preview-image").removeAttribute("src"); document.getElementById("preview-frame").removeAttribute("src"); const pdfCanvas = document.getElementById("preview-pdf-canvas"); pdfCanvas.hidden = true; pdfCanvas.width = 0; pdfCanvas.height = 0; } }
-        function renderAttachmentCards(container, attachments) { container.textContent = ""; for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", "健康证"]]) { const attachment = attachments[key]; const card = element("div", "", "attachment-card"); card.appendChild(element("strong", label)); card.appendChild(element("div", attachment ? attachment.originalName : "未上传", "muted")); if (attachment) { card.appendChild(element("div", `${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`, "muted")); card.appendChild(attachmentButton(attachment, "查看附件")); } container.appendChild(card); } }
+        function renderAttachmentCards(container, attachments) { container.textContent = ""; for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", "健康证"]]) { const attachment = attachments[key]; const card = element("div", "", "attachment-card"); card.appendChild(element("strong", label)); card.appendChild(element("div", attachment ? attachment.originalName : "未上传", "muted")); if (attachment) { card.appendChild(element("div", `${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`, "muted")); if (can("attachment:view")) card.appendChild(attachmentButton(attachment, "查看附件")); } container.appendChild(card); } }
         async function openDetail(id) { openModal("detail-modal"); const content = document.getElementById("detail-content"); content.textContent = "正在加载..."; try { const [detailPayload, historyPayload] = await Promise.all([requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`), requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}/history`)]); const item = detailPayload.item; document.getElementById("detail-title").textContent = item.name; document.getElementById("detail-subtitle").textContent = `提交 ID ${item.submitId} · 当前版本 v${item.version}`; content.textContent = ""; const grid = element("div", "", "detail-grid"); for (const [label, value] of [["姓名", item.name], ["手机号", item.phone], ["岗位", POSITION_LABELS[item.position] || "未填写"], ["门店", STORE_LABELS[item.storeKey]], ["状态", item.deletedAt ? "已删除" : "在用"], ["提交时间", formatDate(item.createdAt)], ["最近更新", formatDate(item.updatedAt)], ["删除时间", formatDate(item.deletedAt)], ["当前版本", `v${item.version}`]]) { const card = element("div", "", "detail-card"); card.append(element("div", label, "detail-label"), element("div", value || "-", "detail-value")); grid.appendChild(card); } content.appendChild(grid); content.appendChild(element("h3", "当前证件", "section-heading")); const currentAttachments = element("div", "", "attachment-list"); renderAttachmentCards(currentAttachments, item.attachments); content.appendChild(currentAttachments); content.appendChild(element("h3", "版本历史（只读）", "section-heading")); const timeline = element("div", "", "timeline"); for (const revision of historyPayload.items) { const details = element("details", "", "revision"); const summary = document.createElement("summary"); const left = element("strong", `v${revision.version} · ${ACTION_LABELS[revision.action] || revision.action}`); const right = element("span", formatDate(revision.changedAt), "muted"); summary.append(left, right); const revisionBody = element("div", "", "revision-body"); const meta = element("div", "", "revision-meta"); meta.append(element("span", `姓名：${revision.name}`), element("span", `手机号：${revision.phone}`), element("span", `岗位：${POSITION_LABELS[revision.position] || "未填写"}`), element("span", `门店：${STORE_LABELS[revision.storeKey]}`), element("span", `操作人：${revision.actorUsername || "员工提交"}`)); revisionBody.appendChild(meta); const attachments = element("div", "", "attachment-list"); renderAttachmentCards(attachments, revision.attachments); revisionBody.appendChild(attachments); details.append(summary, revisionBody); timeline.appendChild(details); } content.appendChild(timeline); } catch (error) { content.textContent = error.message; } }
 
-        async function openEdit(id) { const feedback = document.getElementById("edit-feedback"); feedback.hidden = true; editForm.reset(); try { const payload = await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`); const item = payload.item; if (item.deletedAt) throw new Error("已删除记录需要先恢复后才能编辑。"); document.getElementById("edit-id").value = item.id; document.getElementById("edit-name").value = item.name; document.getElementById("edit-phone").value = item.phone; document.getElementById("edit-position").value = item.position || ""; document.getElementById("edit-store").value = item.storeKey; document.getElementById("edit-front-current").textContent = item.attachments.idCardFront?.originalName || "未上传"; document.getElementById("edit-back-current").textContent = item.attachments.idCardBack?.originalName || "未上传"; document.getElementById("edit-health-current").textContent = item.attachments.healthCertificate?.originalName || "未上传"; document.getElementById("remove-health-row").hidden = !item.attachments.healthCertificate; openModal("edit-modal"); } catch (error) { setStatus(error.message, true); } }
-        editForm.addEventListener("submit", async (event) => { event.preventDefault(); const id = document.getElementById("edit-id").value; const feedback = document.getElementById("edit-feedback"); const button = document.getElementById("edit-submit"); feedback.hidden = true; button.disabled = true; button.textContent = "保存中..."; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`, { method: "PATCH", body: new FormData(editForm) }); closeModal("edit-modal"); setStatus("已保存新版本，历史资料保持不变。"); await loadRecords(); } catch (error) { feedback.textContent = error.message; feedback.hidden = false; } finally { button.disabled = false; button.textContent = "保存新版本"; } });
+        async function openEdit(id) { if (!can("employee:edit")) return; const feedback = document.getElementById("edit-feedback"); feedback.hidden = true; editForm.reset(); try { const payload = await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`); const item = payload.item; if (item.deletedAt) throw new Error("已删除记录需要先恢复后才能编辑。"); document.getElementById("edit-id").value = item.id; document.getElementById("edit-name").value = item.name; document.getElementById("edit-phone").value = item.phone; document.getElementById("edit-position").value = item.position || ""; document.getElementById("edit-store").value = item.storeKey; document.getElementById("edit-front-current").textContent = item.attachments.idCardFront?.originalName || "未上传"; document.getElementById("edit-back-current").textContent = item.attachments.idCardBack?.originalName || "未上传"; document.getElementById("edit-health-current").textContent = item.attachments.healthCertificate?.originalName || "未上传"; document.getElementById("remove-health-row").hidden = !item.attachments.healthCertificate; openModal("edit-modal"); } catch (error) { setStatus(error.message, true); } }
+        editForm.addEventListener("submit", async (event) => { event.preventDefault(); if (!can("employee:edit")) return; const id = document.getElementById("edit-id").value; const feedback = document.getElementById("edit-feedback"); const button = document.getElementById("edit-submit"); feedback.hidden = true; button.disabled = true; button.textContent = "保存中..."; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`, { method: "PATCH", body: new FormData(editForm) }); closeModal("edit-modal"); setStatus("已保存新版本，历史资料保持不变。"); await loadRecords(); } catch (error) { feedback.textContent = error.message; feedback.hidden = false; } finally { button.disabled = false; button.textContent = "保存新版本"; } });
 
-        async function deleteRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认把 ${item.name}（${item.phone}）移入回收站？\n\n资料和全部历史附件会保留，可在“已删除”中恢复。`)) return; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`, { method: "DELETE" }); setStatus("记录已移入回收站。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
-        async function restoreRecord(id) { const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认恢复 ${item.name}（${item.phone}）？`)) return; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}/restore`, { method: "POST" }); setStatus("记录已恢复。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
+        async function deleteRecord(id) { if (!can("employee:delete")) return; const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认把 ${item.name}（${item.phone}）移入回收站？\n\n资料和全部历史附件会保留，可在“已删除”中恢复。`)) return; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}`, { method: "DELETE" }); setStatus("记录已移入回收站。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
+        async function restoreRecord(id) { if (!can("employee:restore")) return; const item = state.items.find((entry) => entry.id === id); if (!item || !confirm(`确认恢复 ${item.name}（${item.phone}）？`)) return; try { await requestJson(`/staff/api/admin/submissions/${encodeURIComponent(id)}/restore`, { method: "POST" }); setStatus("记录已恢复。"); await loadRecords(); } catch (error) { setStatus(error.message, true); } }
 
-        async function openPreview(button) {
+        async function openPreview(button) { if (!can("attachment:view")) return;
           openModal("preview-modal");
           const status = document.getElementById("preview-status");
           const image = document.getElementById("preview-image");

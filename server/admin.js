@@ -60,9 +60,13 @@ export function normalizeAdminListQuery(query = {}) {
   };
 }
 
-function buildListWhereClause({ search, storeKey, status }) {
+function buildListWhereClause({ search, storeKey, status }, allowedStores) {
   const clauses = [];
   const params = {};
+  if (allowedStores) {
+    const placeholders = allowedStores.map((store, index) => { params[`allowedStore${index}`] = store; return `@allowedStore${index}`; });
+    clauses.push(placeholders.length ? `store_key IN (${placeholders.join(",")})` : "0 = 1");
+  }
   if (status === "active") clauses.push("deleted_at IS NULL");
   if (status === "deleted") clauses.push("deleted_at IS NOT NULL");
   if (storeKey) {
@@ -85,9 +89,9 @@ function buildListWhereClause({ search, storeKey, status }) {
   };
 }
 
-export function listEmployeeSubmissions(db, query) {
+export function listEmployeeSubmissions(db, query, allowedStores) {
   const normalized = normalizeAdminListQuery(query);
-  const { whereSql, params } = buildListWhereClause(normalized);
+  const { whereSql, params } = buildListWhereClause(normalized, allowedStores);
   const rows = db
     .prepare(
       `SELECT *
@@ -112,7 +116,7 @@ export function getEmployeeSubmissionDetail(db, submissionId) {
   return serializeSubmission(db, getSubmissionRow(db, submissionId));
 }
 
-export function getEmployeeSubmissionHistory(db, submissionId) {
+export function getEmployeeSubmissionHistory(db, submissionId, allowedStores) {
   const submission = getSubmissionRow(db, submissionId);
   if (!submission) return null;
 
@@ -125,7 +129,7 @@ export function getEmployeeSubmissionHistory(db, submissionId) {
     )
     .all(submissionId);
 
-  return revisions.map((revision) => ({
+  return revisions.filter((revision) => !allowedStores || allowedStores.includes(revision.store_key)).map((revision) => ({
     revisionId: revision.revision_id,
     version: revision.version,
     action: revision.action,
@@ -150,9 +154,18 @@ export function getEmployeeSubmissionHistory(db, submissionId) {
   }));
 }
 
-export function getAdminAttachment(db, attachmentVersionId) {
+export function getAdminAttachment(db, attachmentVersionId, allowedStores) {
   const row = getAttachmentRow(db, attachmentVersionId);
   if (!row || !fs.existsSync(row.storage_path)) return null;
+  if (allowedStores) {
+    const submission = getSubmissionRow(db, row.submission_id);
+    if (!submission || !allowedStores.includes(submission.store_key)) return null;
+    const current = [submission.current_id_card_front_attachment_id, submission.current_id_card_back_attachment_id, submission.current_health_certificate_attachment_id].includes(attachmentVersionId);
+    const revisions = db.prepare(`SELECT store_key FROM employee_submission_revisions WHERE submission_id = ? AND
+      (id_card_front_attachment_id = ? OR id_card_back_attachment_id = ? OR health_certificate_attachment_id = ?)`)
+      .all(row.submission_id, attachmentVersionId, attachmentVersionId, attachmentVersionId);
+    if (!current && !revisions.some((revision) => allowedStores.includes(revision.store_key))) return null;
+  }
   return row;
 }
 
@@ -167,6 +180,7 @@ export async function updateEmployeeSubmission({
   files,
   uploadsRoot,
   actorUsername,
+  allowedStores,
   now = new Date(),
   generateId = () => crypto.randomUUID(),
 }) {
@@ -181,6 +195,9 @@ export async function updateEmployeeSubmission({
   const payload = validateEmployeePayload(
     normalizeEmployeePayload(body, body.storeKey ?? body.store_key)
   );
+  if (allowedStores && (!allowedStores.includes(existing.store_key) || !allowedStores.includes(payload.storeKey))) {
+    throw new AdminOperationError("无权访问目标门店。", { statusCode: 403 });
+  }
   const idCardFront = getSingleUploadedFile(files, "idCardFront");
   const idCardBack = getSingleUploadedFile(files, "idCardBack");
   const healthCertificate = getSingleUploadedFile(files, "healthCertificate");
@@ -242,6 +259,16 @@ export async function updateEmployeeSubmission({
     const nextVersion = existing.current_version + 1;
 
     db.transaction(() => {
+      // Uploads are asynchronous: recheck the row under the write transaction.
+      if (allowedStores) {
+        const current = getSubmissionRow(db, submissionId);
+        if (!current || !allowedStores.includes(current.store_key)) {
+          throw new AdminOperationError("员工记录不存在。", { statusCode: 404 });
+        }
+        if (current.deleted_at || current.current_version !== existing.current_version) {
+          throw new AdminOperationError("记录已变化，请重新加载后编辑。", { statusCode: 409 });
+        }
+      }
       for (const attachment of pendingAttachments) {
         insertAttachmentVersion(db, attachment);
       }

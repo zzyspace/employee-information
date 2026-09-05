@@ -1,3 +1,4 @@
+import { applicationAuth, gatewayAuthConfig, allowedStores, storeAllowed, requirePermission, sessionInfo } from "./authorization.js";
 import path from "node:path";
 
 import express from "express";
@@ -86,6 +87,7 @@ export function createApp({
   staticDir = publicDir,
   uploadDirectory = uploadsRoot,
   adminCredentials = { username: adminUsername, password: adminPassword },
+  gatewayAuth = gatewayAuthConfig(),
   identityCardRecognizer = createIdentityCardRecognizer({
     baseUrl: idCardModelBaseUrl,
     apiKey: idCardModelApiKey,
@@ -96,10 +98,16 @@ export function createApp({
   }),
 } = {}) {
   const app = express();
-  const adminAuth = createAdminAuthMiddleware(adminCredentials);
+  const adminAuth = applicationAuth(createAdminAuthMiddleware(adminCredentials), gatewayAuth);
   const parseEmployeeFiles = upload.fields(uploadFields);
 
   app.disable("x-powered-by");
+  app.set("trust proxy", "loopback");
+  const checkRecord = (request, response, next) => {
+    const record = db.prepare("SELECT store_key FROM employee_submissions WHERE id = ?").get(request.params.id);
+    if (!record || !storeAllowed(response, record.store_key)) return response.status(404).json({ success: false, error: { message: "员工记录不存在。" } });
+    next();
+  };
 
   app.get(["/health/staff", `${PUBLIC_BASE_PATH}/healthz`, `${LEGACY_BASE_PATH}/healthz`], (_request, response) => {
     response.status(200).json({ ok: true });
@@ -162,24 +170,27 @@ export function createApp({
     }
   });
 
-  app.get([PUBLIC_BASE_PATH, `${PUBLIC_BASE_PATH}/`], adminAuth, (_request, response) => {
+  app.get([PUBLIC_BASE_PATH, `${PUBLIC_BASE_PATH}/`], adminAuth, requirePermission("employee:view"), (_request, response) => {
     response.sendFile(path.join(staticDir, "portal.html"));
   });
 
-  app.get([`${LEGACY_BASE_PATH}/portal`, `${LEGACY_BASE_PATH}/portal/`], adminAuth, (_request, response) => {
+  app.get([`${LEGACY_BASE_PATH}/portal`, `${LEGACY_BASE_PATH}/portal/`], adminAuth, requirePermission("employee:view"), (_request, response) => {
     response.sendFile(path.join(staticDir, "portal.html"));
   });
 
   app.use([`${PUBLIC_BASE_PATH}/api/admin`, `${LEGACY_BASE_PATH}/api/admin`], adminAuth);
 
+  app.get([`${PUBLIC_BASE_PATH}/api/admin/session`, `${LEGACY_BASE_PATH}/api/admin/session`],
+    (_request, response) => response.json(sessionInfo(response)));
+
   app.get([
     `${PUBLIC_BASE_PATH}/api/admin/submissions`,
     `${LEGACY_BASE_PATH}/api/admin/submissions`,
-  ], (request, response, next) => {
+  ], requirePermission("employee:view"), (request, response, next) => {
     try {
       response.status(200).json({
         success: true,
-        ...listEmployeeSubmissions(db, request.query),
+        ...listEmployeeSubmissions(db, request.query, allowedStores(response)),
       });
     } catch (error) {
       next(error);
@@ -189,7 +200,7 @@ export function createApp({
   app.get([
     `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
     `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
-  ], (request, response, next) => {
+  ], requirePermission("employee:view"), checkRecord, (request, response, next) => {
     try {
       const item = getEmployeeSubmissionDetail(db, request.params.id);
       if (!item) {
@@ -204,9 +215,9 @@ export function createApp({
   app.get([
     `${PUBLIC_BASE_PATH}/api/admin/submissions/:id/history`,
     `${LEGACY_BASE_PATH}/api/admin/submissions/:id/history`,
-  ], (request, response, next) => {
+  ], requirePermission("employee:view"), checkRecord, (request, response, next) => {
     try {
-      const items = getEmployeeSubmissionHistory(db, request.params.id);
+      const items = getEmployeeSubmissionHistory(db, request.params.id, allowedStores(response));
       if (!items) {
         throw new AdminOperationError("员工记录不存在。", { statusCode: 404 });
       }
@@ -219,9 +230,9 @@ export function createApp({
   app.get([
     `${PUBLIC_BASE_PATH}/api/admin/attachments/:attachmentVersionId`,
     `${LEGACY_BASE_PATH}/api/admin/attachments/:attachmentVersionId`,
-  ], (request, response, next) => {
+  ], requirePermission("attachment:view"), (request, response, next) => {
     try {
-      const attachment = getAdminAttachment(db, request.params.attachmentVersionId);
+      const attachment = getAdminAttachment(db, request.params.attachmentVersionId, allowedStores(response));
       if (!attachment) {
         throw new AdminOperationError("附件不存在或文件已丢失。", { statusCode: 404 });
       }
@@ -240,7 +251,7 @@ export function createApp({
   app.patch([
     `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
     `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
-  ], parseEmployeeFiles, async (request, response, next) => {
+  ], requirePermission("employee:edit"), checkRecord, parseEmployeeFiles, async (request, response, next) => {
     try {
       const item = await updateEmployeeSubmission({
         db,
@@ -249,6 +260,7 @@ export function createApp({
         files: request.files,
         uploadsRoot: uploadDirectory,
         actorUsername: request.adminUsername,
+        allowedStores: allowedStores(response),
       });
       response.status(200).json({ success: true, item });
     } catch (error) {
@@ -259,7 +271,7 @@ export function createApp({
   app.delete([
     `${PUBLIC_BASE_PATH}/api/admin/submissions/:id`,
     `${LEGACY_BASE_PATH}/api/admin/submissions/:id`,
-  ], (request, response, next) => {
+  ], requirePermission("employee:delete"), checkRecord, (request, response, next) => {
     try {
       const item = softDeleteEmployeeSubmission({
         db,
@@ -276,7 +288,7 @@ export function createApp({
   app.post([
     `${PUBLIC_BASE_PATH}/api/admin/submissions/:id/restore`,
     `${LEGACY_BASE_PATH}/api/admin/submissions/:id/restore`,
-  ], (request, response, next) => {
+  ], requirePermission("employee:restore"), checkRecord, (request, response, next) => {
     try {
       const item = restoreEmployeeSubmission({
         db,
