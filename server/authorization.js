@@ -9,7 +9,9 @@ export function validateAuthorization(data) {
   if (!Array.isArray(access.permissions) || access.permissions.some((value) => !PERMISSIONS.includes(value)) ||
       !config || Object.keys(config).some((key) => key !== "viewScope") || !scope ||
       Object.keys(scope).some((key) => !["stores", "ownership"].includes(key)) || scope.ownership !== "any" ||
-      !(scope.stores === "all" || (Array.isArray(scope.stores) && scope.stores.every((store) => STORES.includes(store))))) {
+      !(scope.stores === "all" || (Array.isArray(scope.stores) && scope.stores.length > 0 && scope.stores.every((store) => STORES.includes(store)))) ||
+      !access.permissions.includes("employee:view") ||
+      (["attachment:view", "employee:edit", "employee:delete", "employee:restore"].some((permission) => access.permissions.includes(permission)) && !access.permissions.includes("employee:view"))) {
     throw new Error("Unsupported application authorization.");
   }
   return data;

@@ -8,6 +8,9 @@ test("application authorization rejects unknown permissions, scopes and unsuppor
     { ...data.access, permissions: ["other:admin"] },
     { ...data.access, config: { viewScope: { ownership: "self", stores: "all" } } },
     { ...data.access, config: { viewScope: { ownership: "any", stores: ["unknown"] } } },
+    { ...data.access, config: { viewScope: { ownership: "any", stores: [] } } },
+    { ...data.access, permissions: ["employee:edit"] },
+    { ...data.access, permissions: ["attachment:view"] },
     { ...data.access, config: { viewScope: { ownership: "any", stores: "all", override: true } } },
   ]) assert.throws(() => validateAuthorization({ access }), /Unsupported/);
 });
