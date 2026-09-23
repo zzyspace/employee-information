@@ -9,7 +9,7 @@
       (() => {
         let savedTheme = null;
         try {
-          savedTheme = window.localStorage.getItem("employee-portal-theme");
+          savedTheme = window.localStorage.getItem("comeover-admin-theme") ?? window.localStorage.getItem("employee-portal-theme");
         } catch {
           // Storage may be unavailable in privacy-restricted browser contexts.
         }
@@ -419,7 +419,7 @@
     <div id="toast" class="toast" role="status" hidden></div>
     <script>
       (() => {
-        const THEME_STORAGE_KEY = "employee-portal-theme";
+        const THEME_STORAGE_KEY = "comeover-admin-theme";
         const STORE_LABELS = { fuzzy: "Fuzzy", fuzzy_qz: "Fuzzy泉州店", peanut: "Peanut" };
         const POSITION_LABELS = { front_of_house: "前厅", back_of_house: "后厨" };
         const ACTION_LABELS = { created: "员工提交", updated: "资料编辑", deleted: "移入回收站", restored: "从回收站恢复" };
@@ -485,7 +485,7 @@
 
         function readSavedTheme() {
           try {
-            const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+            const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) ?? window.localStorage.getItem("employee-portal-theme");
             return savedTheme === "light" || savedTheme === "dark" ? savedTheme : null;
           } catch {
             return null;
@@ -1032,6 +1032,9 @@
         const systemThemePreference = window.matchMedia("(prefers-color-scheme: dark)");
         applyTheme(document.documentElement.dataset.theme || (systemThemePreference.matches ? "dark" : "light"));
         themeToggle.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true));
+        window.addEventListener("storage", (event) => {
+          if (event.key === THEME_STORAGE_KEY && (event.newValue === "light" || event.newValue === "dark")) applyTheme(event.newValue);
+        });
         systemThemePreference.addEventListener("change", (event) => { if (!readSavedTheme()) applyTheme(event.matches ? "dark" : "light"); });
         centerSwitcherTrigger.addEventListener("click", () => { if (centerSwitcher.classList.contains("is-open")) closeCenterSwitcher(); else openCenterSwitcher(); });
         centerSwitcherBackdrop.addEventListener("click", () => closeCenterSwitcher({ restoreFocus: true }));
