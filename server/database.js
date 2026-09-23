@@ -31,6 +31,7 @@ export function createDatabase({ dbFilePath, dbInitSqlPath }) {
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
   db.exec(fs.readFileSync(dbInitSqlPath, "utf8"));
+  if (!db.prepare('PRAGMA table_info(employee_submission_revisions)').all().some(column => column.name === 'actor_display_name')) db.exec('ALTER TABLE employee_submission_revisions ADD COLUMN actor_display_name TEXT');
   ensurePositionColumns(db);
   ensureIdentityCardNumberColumns(db);
   return db;

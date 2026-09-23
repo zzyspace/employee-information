@@ -260,6 +260,7 @@ export function createApp({
         files: request.files,
         uploadsRoot: uploadDirectory,
         actorUsername: request.adminUsername,
+        actorDisplayName: response.locals.gatewayAuthorization?.account.displayName || request.adminUsername,
         allowedStores: allowedStores(response),
       });
       response.status(200).json({ success: true, item });
@@ -277,6 +278,7 @@ export function createApp({
         db,
         submissionId: request.params.id,
         actorUsername: request.adminUsername,
+        actorDisplayName: response.locals.gatewayAuthorization?.account.displayName || request.adminUsername,
         now: new Date(),
       });
       response.status(200).json({ success: true, item });
@@ -294,6 +296,7 @@ export function createApp({
         db,
         submissionId: request.params.id,
         actorUsername: request.adminUsername,
+        actorDisplayName: response.locals.gatewayAuthorization?.account.displayName || request.adminUsername,
         now: new Date(),
       });
       response.status(200).json({ success: true, item });

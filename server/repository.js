@@ -38,6 +38,7 @@ export function insertRevision(db, {
   healthCertificateAttachmentId,
   changedAt,
   actorUsername,
+  actorDisplayName,
 }) {
   db.prepare(
     `INSERT INTO employee_submission_revisions (
@@ -53,8 +54,9 @@ export function insertRevision(db, {
       id_card_back_attachment_id,
       health_certificate_attachment_id,
       changed_at,
-      actor_username
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      actor_username,
+      actor_display_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     submissionId,
     version,
@@ -68,7 +70,8 @@ export function insertRevision(db, {
     idCardBackAttachmentId,
     healthCertificateAttachmentId || null,
     changedAt,
-    actorUsername || null
+    actorUsername || null,
+    actorDisplayName || null
   );
 }
 

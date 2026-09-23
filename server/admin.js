@@ -140,6 +140,7 @@ export function getEmployeeSubmissionHistory(db, submissionId, allowedStores) {
     storeKey: revision.store_key,
     changedAt: revision.changed_at,
     actorUsername: revision.actor_username,
+    actorDisplayName: revision.actor_display_name || revision.actor_username,
     attachments: {
       idCardFront: serializeAttachment(
         getAttachmentRow(db, revision.id_card_front_attachment_id)
@@ -180,6 +181,7 @@ export async function updateEmployeeSubmission({
   files,
   uploadsRoot,
   actorUsername,
+  actorDisplayName,
   allowedStores,
   now = new Date(),
   generateId = () => crypto.randomUUID(),
@@ -308,6 +310,7 @@ export async function updateEmployeeSubmission({
         healthCertificateAttachmentId,
         changedAt,
         actorUsername,
+        actorDisplayName,
       });
     })();
   } catch (error) {
@@ -318,7 +321,7 @@ export async function updateEmployeeSubmission({
   return getEmployeeSubmissionDetail(db, submissionId);
 }
 
-function changeDeletionState({ db, submissionId, actorUsername, now, action }) {
+function changeDeletionState({ db, submissionId, actorUsername, actorDisplayName, now, action }) {
   const existing = getSubmissionRow(db, submissionId);
   if (!existing) {
     throw new AdminOperationError("员工记录不存在。", { statusCode: 404 });
@@ -355,6 +358,7 @@ function changeDeletionState({ db, submissionId, actorUsername, now, action }) {
       healthCertificateAttachmentId: existing.current_health_certificate_attachment_id,
       changedAt,
       actorUsername,
+      actorDisplayName,
     });
   })();
 

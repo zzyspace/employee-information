@@ -827,7 +827,7 @@
           const content = document.getElementById("detail-history"); content.replaceChildren(element("h3", "修改历史（只读）", "section-title"));
           for (const revision of history) {
             const details = element("details", "", "revision"), summary = document.createElement("summary");
-            summary.append(element("strong", `v${revision.version} · ${ACTION_LABELS[revision.action] || revision.action}`), element("span", `${formatDate(revision.changedAt)} · ${revision.actorUsername || "员工提交"}`));
+            summary.append(element("strong", `v${revision.version} · ${ACTION_LABELS[revision.action] || revision.action}`), element("span", `${formatDate(revision.changedAt)} · ${revision.actorDisplayName || revision.actorUsername || "员工提交"}`));
             const meta = element("div", "", "revision-meta");
             for (const [label, value] of [["姓名", revision.name], ["手机号", revision.phone], ["身份证号", revision.identityCardNumber], ["门店", STORE_LABELS[revision.storeKey]], ["岗位", POSITION_LABELS[revision.position] || "未填写"]]) meta.appendChild(element("span", `${label}：${value || "-"}`));
             const attachments = element("div", "", "attachment-list"); renderAttachmentCards(attachments, revision.attachments);

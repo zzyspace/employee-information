@@ -459,6 +459,9 @@ test("editing creates immutable field and attachment history, including removed 
       const history = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { headers: authHeaders() });
       const historyItems = (await history.json()).items;
       assert.equal(historyItems.length, 3);
+      assert.equal(historyItems[0].actorDisplayName, 'admin');
+      assert.equal(harness.db.prepare('SELECT actor_display_name FROM employee_submission_revisions WHERE submission_id=? AND version=3').get(id).actor_display_name, 'admin');
+      assert.equal(harness.db.prepare('SELECT actor_display_name FROM employee_submission_revisions WHERE submission_id=? AND version=1').get(id).actor_display_name, null);
       assert.deepEqual(historyItems.map((item) => item.action), ["updated", "updated", "created"]);
       assert.equal(historyItems[2].name, "张三");
       assert.equal(historyItems[2].position, "front_of_house");
