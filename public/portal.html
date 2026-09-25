@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="color-scheme" content="light dark" />
     <title>员工信息后台</title>
     <script>
@@ -21,6 +21,8 @@
       })();
     </script>
     <style>
+      /* Allow touch scrolling without page pinch zoom. */
+      html { touch-action: pan-x pan-y; }
       :root { --page:#f4f7fb;--surface:#fff;--soft:#f5f7fa;--ink:#17202a;--muted:#697483;--line:#e3e8ef;--brand:#007aff;--brand-soft:#eaf3ff;--danger:#c5352b;--success:#217a4a;--warning:#9a6700;--shadow:0 12px 40px #1c2d4808;color-scheme:light }
       :root[data-theme="dark"] { --page:#0f1115;--surface:#1d2026;--soft:#262a31;--ink:#f1f4f8;--muted:#a4adba;--line:#343942;--brand:#72b5ff;--brand-soft:#23354c;--danger:#ff8e86;--success:#78d59e;--warning:#ffd36a;--shadow:none;color-scheme:dark }
       * { box-sizing:border-box }

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
     <meta name="color-scheme" content="light dark" />
     <title>新员工入职信息</title>
     <script>
@@ -21,6 +21,8 @@
       })();
     </script>
     <style>
+      /* Allow touch scrolling without page pinch zoom. */
+      html { touch-action: pan-x pan-y; }
       :root {
         color-scheme: light;
         --page: #f4f7fb;
