@@ -862,7 +862,7 @@ button.document-summary:hover { background:var(--brand-soft); }
         }
         function recordActions(item) {
           const actions = element("div", "", "record-actions");
-          actions.appendChild(actionButton("查看", "detail", item.id, "record-view"));
+          actions.appendChild(actionButton("复制", "copy-record", item.id, "record-view"));
           if (item.deletedAt && can("employee:restore")) actions.appendChild(actionButton("恢复", "restore", item.id, "record-edit"));
           else if (!item.deletedAt && can("employee:edit")) actions.appendChild(actionButton("编辑", "edit", item.id, "record-edit"));
           actions.appendChild(moreButton(item)); return actions;
@@ -1245,6 +1245,10 @@ button.document-summary:hover { background:var(--brand-soft); }
           const { action: kind, id } = action.dataset;
           if (kind !== "more") closeRowMenu();
           if (kind === "detail" || kind === "documents" || kind === "history") void openDetail(id, kind === "detail" ? "basic" : kind);
+          if (kind === "copy-record") {
+            const item = state.items.find(entry => entry.id === id);
+            if (item) void copyText([item.name, item.identityCardNumber, item.phone].map(value => String(value ?? "").trim()).join(" "));
+          }
           if (kind === "edit") void openEdit(id);
           if (kind === "delete" || kind === "restore") void changeRecord(id, kind === "restore");
           if (kind === "more") { const item = state.items.find(entry => entry.id === id); if (item) openRowMenu(action, item); }
