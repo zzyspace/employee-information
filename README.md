@@ -26,7 +26,7 @@
 - 手机号必须是有效的中国大陆 11 位手机号。
 - 岗位必选，支持前厅和后厨。
 - 身份证正面、反面必填，健康证选填。
-- 提交时使用与 `wechat-claw` 报账识别相同的模型配置识别身份证正面；识别出通过校验的 18 位身份证号时写入该字段，识别失败不影响员工记录和附件保存。
+- 提交时使用与 `wechat-claw` 报账识别相同的模型配置，先识别上传为身份证正面的文件；未提取到有效号码时再识别上传为反面的文件，兼容正反面上传颠倒。任一面识别出通过校验的 18 位身份证号即停止，两面均未识别成功也不影响员工记录和附件保存。附件本身不交换位置。
 - 提交前必须添加财务微信、备注真实姓名与门店名称，并勾选完成确认。
 - 支持 JPG、PNG、HEIC、HEIF、PDF，每个文件最大 20MB。
 - 后台使用本地 PDF.js 渲染 PDF 首页并裁去大面积空白后居中预览；原文件保持不变且不发送到第三方预览服务。
@@ -75,6 +75,8 @@ WECHATY_REIMBURSEMENT_OPENAI_PROXY_URL
 ```
 
 生产服务会额外加载 `wechat-claw` 使用的 `/etc/wechat-claw.env`，从而读取同一组模型配置；`/etc/invoice-submit.env` 仍只用于共享后台凭据。需要单独切换员工系统时，可用 `EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROVIDER`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_NAME`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_API_KEY`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_BASE_URL`、`EMPLOYEE_INFORMATION_ID_CARD_MODEL_PROXY_URL` 覆盖。模型请求失败、结果缺失或身份证校验码/出生日期不合法时，员工记录和附件仍会保存，`identity_card_number` 保持为空。
+
+正面无有效号码（包括返回空值、格式/出生日期/校验码不合法）才继续识别反面；网络错误、超时或服务配置错误仍直接跳过识别。两次识别串行执行，各自使用配置的超时（默认 60 秒）。后台编辑、替换附件及已有记录的补识别不在该提交流程内。
 
 ## 验证
 

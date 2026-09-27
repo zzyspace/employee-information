@@ -591,8 +591,10 @@ test("identity card recognition uses the wechat-claw compatible model request an
 });
 
 test("recognition failure keeps the submission and attachments with an empty identity card number", async () => {
+  const attemptedFiles = [];
   const harness = createHarness({
-    identityCardRecognizer: async () => {
+    identityCardRecognizer: async (file) => {
+      attemptedFiles.push(file.originalName);
       throw new IdentityCardRecognitionError("无法识别", { statusCode: 422 });
     },
   });
@@ -601,6 +603,7 @@ test("recognition failure keeps the submission and attachments with an empty ide
       const response = await submit(baseUrl);
       assert.equal(response.status, 201);
       assert.equal((await response.json()).success, true);
+      assert.deepEqual(attemptedFiles, ["front.jpg", "back.png"]);
       assert.deepEqual(
         harness.db.prepare("SELECT identity_card_number FROM employee_submissions").all(),
         [{ identity_card_number: null }]
@@ -612,4 +615,65 @@ test("recognition failure keeps the submission and attachments with an empty ide
   } finally {
     harness.close();
   }
+});
+
+test("submission recognizes the back upload only when the front has no valid number", async (t) => {
+  for (const scenario of [
+    { name: "valid front stops after one request", first: VALID_ID_CARD_NUMBER, calls: 1 },
+    { name: "empty front falls back to the back upload", first: null, calls: 2 },
+    { name: "invalid front checksum falls back to the back upload", first: "110105194912310021", calls: 2 },
+    { name: "invalid front birth date falls back to the back upload", first: "11010519491331002X", calls: 2 },
+  ]) {
+    await t.test(scenario.name, async () => {
+      const requests = [];
+      const harness = createHarness({
+        identityCardRecognizer: createIdentityCardRecognizer({
+          baseUrl: "https://example.com/v1", apiKey: "test-key", model: "test-model",
+          fetchImpl: async (_url, init) => {
+            requests.push(JSON.parse(init.body));
+            const number = requests.length === 1 ? scenario.first : VALID_ID_CARD_NUMBER;
+            return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ idCardNumber: number }) } }] }), {
+              status: 200, headers: { "Content-Type": "application/json" },
+            });
+          },
+        }),
+      });
+      try {
+        await withServer(harness.app, async (baseUrl) => {
+          const response = await submit(baseUrl);
+          assert.equal(response.status, 201);
+          assert.equal(requests.length, scenario.calls);
+          assert.equal(requests[0].messages[0].content[1].image_url.url, `data:image/jpeg;base64,${jpegBytes().toString("base64")}`);
+          if (scenario.calls === 2) {
+            assert.equal(requests[1].messages[0].content[1].image_url.url, `data:image/png;base64,${pngBytes().toString("base64")}`);
+          }
+          assert.deepEqual(harness.db.prepare("SELECT identity_card_number FROM employee_submissions").all(), [{ identity_card_number: VALID_ID_CARD_NUMBER }]);
+          assert.deepEqual(harness.db.prepare("SELECT identity_card_number FROM employee_submission_revisions").all(), [{ identity_card_number: VALID_ID_CARD_NUMBER }]);
+          assert.deepEqual(harness.db.prepare("SELECT kind, original_name FROM employee_attachment_versions ORDER BY kind").all(), [
+            { kind: "id_card_back", original_name: "back.png" },
+            { kind: "id_card_front", original_name: "front.jpg" },
+          ]);
+          assert.equal(listStoredFiles(harness.uploadsRoot).length, 2);
+        });
+      } finally { harness.close(); }
+    });
+  }
+});
+
+test("recognition service failures do not cause a redundant request for the other side", async () => {
+  const attemptedFiles = [];
+  const harness = createHarness({
+    identityCardRecognizer: async (file) => {
+      attemptedFiles.push(file.originalName);
+      throw new IdentityCardRecognitionError("识别服务不可用", { statusCode: 502 });
+    },
+  });
+  try {
+    await withServer(harness.app, async (baseUrl) => {
+      assert.equal((await submit(baseUrl)).status, 201);
+      assert.deepEqual(attemptedFiles, ["front.jpg"]);
+      assert.equal(harness.db.prepare("SELECT identity_card_number FROM employee_submissions").get().identity_card_number, null);
+      assert.equal(listStoredFiles(harness.uploadsRoot).length, 2);
+    });
+  } finally { harness.close(); }
 });

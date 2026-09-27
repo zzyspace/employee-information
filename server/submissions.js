@@ -122,15 +122,23 @@ export async function createEmployeeSubmission({
       pendingAttachments.map((attachment) => [attachment.kind, attachment])
     );
     let identityCardNumber = null;
-    try {
-      identityCardNumber = await identityCardRecognizer({
-        buffer: idCardFront.buffer,
-        contentType: byKind.id_card_front.contentType,
-        originalName: byKind.id_card_front.originalName,
-      });
-    } catch (error) {
-      if (!(error instanceof IdentityCardRecognitionError)) throw error;
-      console.warn(`Identity card recognition skipped: ${error.message}`);
+    for (const [kind, file] of [
+      ["id_card_front", idCardFront],
+      ["id_card_back", idCardBack],
+    ]) {
+      try {
+        identityCardNumber = await identityCardRecognizer({
+          buffer: file.buffer,
+          contentType: byKind[kind].contentType,
+          originalName: byKind[kind].originalName,
+        });
+        if (identityCardNumber) break;
+      } catch (error) {
+        if (!(error instanceof IdentityCardRecognitionError)) throw error;
+        console.warn(`Identity card recognition skipped (${kind}): ${error.message}`);
+        // Another uploaded side can help with unreadable content, not a service failure.
+        if (error.statusCode !== 422) break;
+      }
     }
 
     db.transaction(() => {

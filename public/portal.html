@@ -441,8 +441,128 @@
       /* Anchor the menu below the full header, including wrapped mobile rows. */
       body > .topbar > .center-switcher { position: static; }
       body > .topbar .center-switcher-menu { top: calc(100% + 9px); left: auto; }
-    </style>
-  </head>
+    /* Shared with the current invoice filter pattern; staff-specific record flows stay intact. */
+.visually-hidden { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0; }
+.staff-filters { border:1px solid var(--line);border-radius:28px;background:var(--surface);box-shadow:var(--shadow);backdrop-filter:blur(20px);padding:14px;margin-bottom:18px; }
+.staff-filters .toolbar { display:grid;grid-template-columns:minmax(150px,180px) minmax(200px,1fr) auto;align-items:center;gap:10px;padding:0; }
+.staff-filters .search { width:100%;min-width:0; }
+.staff-filters #store-key { width:100%;min-width:0;height:40px;font-size:14px; }
+.staff-filters .search input { height:40px;font-size:14px; }
+.staff-filters .search-mark { top:12px; }
+.staff-filters .search-clear { top:4px; }
+.query-button { min-height:40px;padding:0 20px;font-size:14px; }
+.staff-filters .notice-line { padding:0;margin:0; }
+.staff-filters .status:not(.error) { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+.staff-filters .status.error { padding-top:12px;line-height:1.65;font-size:13px; }
+.workspace-tabs { height:auto;min-height:68px;padding:12px 20px;gap:12px; }
+.workspace-tabs .tabs { height:auto;gap:6px;flex-wrap:wrap; }
+.workspace-tabs .tab { border:1px solid transparent;border-radius:12px;min-height:40px;padding:0 12px;gap:6px;font-size:14px; }
+.workspace-tabs .tab.active { background:var(--brand-soft);color:var(--brand); }
+.workspace-tabs .tab.active:after { display:none; }
+.workspace-tabs .tab:not(.active):hover { background:var(--surface-hover); }
+.workspace-tabs .count { padding:2px 6px;min-width:22px; }
+.workspace-tabs .filter-reset { display:block;white-space:nowrap;flex-shrink:0;min-height:40px;color:var(--brand);font-size:12px;padding:0 6px; }
+.foot { padding:14px 18px;flex-wrap:wrap; }
+.pagination { gap:8px; }
+.pagination button { min-height:40px;padding:0 12px;font-size:13px; }
+.pagination select { display:block;min-height:40px;border-radius:10px;background:var(--surface-input);font-size:13px; }
+.record-summary { margin-right:auto; }
+.dialog-header button[data-close] { min-width:44px;min-height:44px;border-radius:12px; }
+.detail-tabs .tabs { gap:20px; }
+@media(max-width:650px){
+ .staff-filters { padding:12px; }
+ .staff-filters .toolbar { grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"store store" "search query";gap:8px; }
+ .staff-filters #store-key { grid-area:store;display:block;min-width:0;height:44px;font-size:16px; }
+ .staff-filters .search { grid-area:search;width:100%; }
+ .staff-filters .search input { height:44px;font-size:16px; }
+ .staff-filters .search-mark { top:14px; }
+ .staff-filters .search-clear { top:6px; }
+ .query-button { grid-area:query;min-height:44px;padding:0 18px; }
+ .workspace-tabs { padding:0 0 12px;min-height:56px;border:0;gap:4px; }
+ .workspace-tabs .tabs { gap:4px;flex-wrap:nowrap; }
+ .workspace-tabs .tab { min-height:44px;padding:0 8px;font-size:13px;gap:4px; }
+ .workspace-tabs .filter-reset { min-height:44px;font-size:12px; }
+ .records-cards { gap:12px; }
+ .employee-card { padding:14px 16px 0; }
+ .card-phone { padding:8px 0 10px; }
+ .card-footer { margin-top:8px; }
+ .foot { padding:16px 0;gap:12px; }
+ .record-summary { width:100%;font-size:12px; }
+ .pagination { width:100%;justify-content:space-between;gap:6px; }
+ .pagination select { display:block;min-height:44px;margin-right:auto;font-size:16px;max-width:132px; }
+ .pagination button { min-height:44px;padding:0 10px;white-space:nowrap; }
+ .pagination #page-number { font-size:11px;white-space:nowrap; }
+}
+@media(max-width:360px){.workspace-tabs .tab { padding:0 5px;font-size:12px; }.workspace-tabs .count { min-width:18px;padding:2px 4px; }.pagination select { max-width:111px;font-size:14px; }.pagination button { padding:0 8px;font-size:12px; }}
+
+/* A shared employee record vocabulary for desktop rows and mobile cards. */
+.employee-row td { height:98px;padding:16px 20px; }
+.employee-row .person,.employee-card .person { gap:11px;min-width:0; }
+.employee-row .avatar,.employee-card .avatar { width:40px;height:40px;border-radius:13px;font-size:15px;font-weight:600; }
+.person-copy { min-width:0; }
+.employee-row .name,.employee-card .name { font-size:15px;font-weight:650;line-height:1.4;padding:0;min-height:0; }
+.employee-row .record-id,.employee-card .record-id { margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px;line-height:1.4;color:var(--muted); }
+.store-copy { display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0; }
+.store-badge { display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 9px;border-radius:999px;font-size:12px;line-height:1.45;background:var(--brand-soft);color:var(--brand); }
+.store-badge > span { overflow-wrap:anywhere; }
+.store-badge .store-dot { flex:0 0 5px;height:5px;width:5px;background:currentColor; }
+.store-peanut { color:var(--warning);background:color-mix(in srgb,var(--warning) 10%,transparent); }
+.store-fuzzy_qz { color:#8657b0;background:rgba(134,87,176,.10); }
+:root[data-theme="dark"] .store-fuzzy_qz { color:#c9a6ee;background:rgba(201,166,238,.13); }
+.position-label { color:var(--muted);font-size:12px;padding-left:2px; }
+.record-phone { font-size:13px;white-space:nowrap; }
+.document-summary { display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:44px;max-width:100%;padding:5px 0;border:0;border-radius:10px;background:transparent;text-align:left;color:var(--ink);font-size:12px;font-weight:500; }
+button.document-summary:hover { background:var(--brand-soft); }
+.document-pill { display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:8px;padding:5px 7px;font-size:11px;line-height:1.45; }
+.document-mark { font-size:11px;font-weight:700; }
+.document-pill.is-present { color:var(--success);background:color-mix(in srgb,var(--success) 9%,transparent); }
+.document-pill.is-missing { color:var(--warning);background:color-mix(in srgb,var(--warning) 10%,transparent); }
+.document-pill.is-optional { color:var(--muted);background:var(--soft); }
+.record-date { display:block;white-space:pre-line;color:var(--muted);font-size:11px;line-height:1.75; }
+.record-actions { display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-shrink:0; }
+.record-actions button { display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 9px;font-size:12px;white-space:nowrap;border-radius:10px; }
+.record-actions .record-view { color:var(--brand);background:var(--brand-soft);border-color:transparent;font-weight:650; }
+.record-actions .record-edit { background:var(--surface-strong);color:var(--ink);border-color:var(--line); }
+.record-actions .more { width:32px;min-width:32px;padding:0;font-size:18px;letter-spacing:0;color:var(--muted);border-color:transparent;background:transparent; }
+.record-actions .more:hover { background:var(--soft); }
+.employee-card { padding:16px 16px 0;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 12px 32px rgba(30,70,120,.08);backdrop-filter:blur(20px);min-width:0; }
+.employee-card .card-top { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.employee-card .person { flex:1; }
+.employee-card .name { min-height:44px;display:flex;align-items:center; }
+.employee-card .record-id { margin-top:0; }
+.employee-card .card-top > .store-copy { align-items:flex-end;max-width:44%; }
+.record-contact { display:flex;align-items:center;gap:12px;padding:13px 0 10px; }
+.record-label { font-size:11px;color:var(--muted); }
+.record-documents { border-radius:12px;background:var(--preview-body);padding:0 8px; }
+.record-documents .document-summary { width:100%;gap:6px; }
+.employee-card .card-footer { display:flex;align-items:center;justify-content:space-between;gap:8px;height:auto;min-height:64px;margin-top:10px;border-top:1px solid var(--line);padding:8px 0; }
+.employee-card .record-actions button { min-height:44px;padding:0 10px; }
+.employee-card .record-actions .more { width:36px;min-width:36px;padding:0; }
+.employee-card .record-date { font-size:10px; }
+@media(min-width:981px){ .table-scroll table { min-width:1280px; } }
+@media(max-width:980px){
+ .table-scroll { display:none; }
+ .records-cards { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px; }
+ .employee-card .record-phone { font-size:13px; }
+}
+@media(max-width:650px){
+ .records-cards { grid-template-columns:minmax(0,1fr);padding:0;gap:12px; }
+ .employee-card .name { font-size:16px; }
+}
+@media(max-width:360px){
+ .employee-card { padding:12px 12px 0; }
+ .employee-card .avatar { width:34px;height:34px;border-radius:11px; }
+ .employee-card .person { gap:8px; }
+ .employee-card .card-top { gap:8px; }
+ .employee-card .store-badge { padding:4px 7px;font-size:11px; }
+ .employee-card .record-actions { gap:4px; }
+ .employee-card .record-actions button { padding:0 8px; }
+}
+
+.record-identity { font-size:12px;white-space:nowrap; }
+
+</style>
+    </head>
   <body>
       <nav class="topbar" aria-label="员工中心导航">
         <div class="center-switcher" id="center-switcher" hidden>
@@ -473,14 +593,16 @@
     <main class="shell">
 
       <header class="page-heading"><div><h1>员工资料</h1><p>查找员工、查看证件与维护入职信息</p></div><span class="heading-meta">每次修改均保留历史版本 / <strong>可追溯，可恢复</strong></span></header>
-      <section class="workspace" aria-label="员工记录">
-        <div class="workspace-tabs"><div class="tabs" aria-label="记录状态"><button class="tab active" data-status="active" aria-pressed="true" type="button">员工资料 <span class="count" id="active-count"></span></button><button class="tab" data-status="deleted" aria-pressed="false" type="button">回收站 <span class="count" id="deleted-count"></span></button><button class="tab" data-status="all" aria-pressed="false" type="button">全部记录</button></div><button class="quiet refresh" id="refresh-button" type="button">↻ 刷新</button></div>
-        <form id="filter-form" class="toolbar"><div class="search"><span class="search-mark" aria-hidden="true"></span><input id="search" name="search" type="search" aria-label="搜索员工" placeholder="搜索姓名、手机号、身份证号、提交 ID"><button class="quiet search-clear" id="clear-search" type="button" aria-label="清除搜索" hidden>×</button></div><button class="filter-toggle" id="filter-toggle" type="button" aria-expanded="false" aria-controls="store-key">筛选</button><select id="store-key" name="storeKey" aria-label="筛选门店"><option value="">全部门店</option><option value="fuzzy">Fuzzy</option><option value="fuzzy_qz">Fuzzy泉州店</option><option value="peanut">Peanut</option></select><button id="reset-filters" class="quiet filter-reset muted" type="button" hidden>重置</button><span id="summary-count" class="toolbar-end">正在加载…</span></form>
+      <section class="staff-filters" aria-label="查询筛选">
+        <form id="filter-form" class="toolbar"><select id="store-key" name="storeKey" aria-label="筛选门店"><option value="">全部门店</option><option value="fuzzy">Fuzzy</option><option value="fuzzy_qz">Fuzzy泉州店</option><option value="peanut">Peanut</option></select><div class="search"><span class="search-mark" aria-hidden="true"></span><input id="search" name="search" type="search" aria-label="搜索员工" placeholder="搜索姓名、手机号、身份证号、提交 ID"><button class="quiet search-clear" id="clear-search" type="button" aria-label="清除搜索" hidden>×</button></div><button id="query-button" class="primary query-button" type="submit">查询</button></form>
         <div class="notice-line"><p id="status-text" class="status" role="status" aria-live="polite">正在加载…</p></div>
-        <div class="table-scroll"><table><colgroup><col style="width:20%"><col style="width:15%"><col style="width:16%"><col style="width:22%"><col style="width:15%"><col style="width:12%"></colgroup><thead><tr><th>员工</th><th>门店 / 岗位</th><th>手机号</th><th>证件资料</th><th>提交时间 ↓</th><th style="text-align:right">操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
+      </section>
+      <section class="workspace" aria-label="员工记录">
+        <div class="workspace-tabs"><div class="tabs" aria-label="记录状态"><button class="tab active" data-status="active" aria-pressed="true" type="button">员工资料 <span class="count" id="active-count"></span></button><button class="tab" data-status="deleted" aria-pressed="false" type="button">回收站 <span class="count" id="deleted-count"></span></button><button class="tab" data-status="all" aria-pressed="false" type="button">全部记录</button></div><button id="reset-filters" class="quiet filter-reset muted" type="button" hidden>重置</button></div>
+        <div class="table-scroll"><table><colgroup><col style="width:15%"><col style="width:11%"><col style="width:14%"><col style="width:19%"><col style="width:16%"><col style="width:11%"><col style="width:14%"></colgroup><thead><tr><th>员工</th><th>门店 / 岗位</th><th>手机号</th><th>身份证号</th><th>证件资料</th><th>提交时间 ↓</th><th style="text-align:right">操作</th></tr></thead><tbody id="records-body"></tbody></table></div>
         <div id="records-cards" class="records-cards"></div>
         <div id="empty-state" class="empty" hidden><h3 id="empty-title">暂无员工资料</h3><p id="empty-description"></p><button id="empty-reset" type="button" hidden>清除筛选</button></div>
-        <div class="foot"><span id="summary-range">共 0 条记录</span><div class="pagination"><select id="limit" aria-label="每页数量"><option value="20">20 条 / 页</option><option value="50" selected>50 条 / 页</option><option value="100">100 条 / 页</option></select><button id="prev-button" type="button" aria-label="上一页">‹</button><span id="page-number" class="small" aria-live="polite">1 / 1</span><button id="next-button" type="button" aria-label="下一页">›</button></div></div>
+        <div class="foot"><div class="record-summary"><span id="summary-range">共 0 条记录</span><span id="summary-count" class="visually-hidden">正在加载…</span></div><div class="pagination"><select id="limit" aria-label="每页数量"><option value="20">20 条 / 页</option><option value="50" selected>50 条 / 页</option><option value="100">100 条 / 页</option></select><button id="prev-button" type="button" aria-label="上一页">上一页</button><span id="page-number" class="small" aria-live="polite">1 / 1</span><button id="next-button" type="button" aria-label="下一页">下一页</button></div></div>
       </section>
       <footer class="footer-note"><span>健康证为选填资料，未上传不代表资料不合格。</span><span>员工信息管理 / STAFF</span></footer>
     </main>
@@ -664,8 +786,6 @@
           button.dataset.id = id;
           return button;
         }
-        function maskPhone(phone) { return String(phone || "").replace(/^(\d{3})\d{4}(\d{4})$/, "$1 **** $2"); }
-        function maskIdentity(value) { return value ? `${value.slice(0, 4)} **** **** ** ${value.slice(-4)}` : "未识别"; }
         function notify(message) {
           const toast = document.getElementById("toast");
           clearTimeout(toastTimer); toast.textContent = message; toast.hidden = false;
@@ -675,43 +795,36 @@
           try { await navigator.clipboard.writeText(value); notify("已复制"); }
           catch { notify("当前浏览器无法直接复制，请展开后选择文本复制。"); }
         }
-        function personCell(item, compact = false) {
+        function personCell(item) {
           const person = element("div", "", "person");
           const avatar = element("span", item.name.slice(0, 1), "avatar"); avatar.setAttribute("aria-hidden", "true");
-          const copy = element("div");
+          const copy = element("div", "", "person-copy");
           copy.appendChild(actionButton(item.name, "detail", item.id, "name"));
           const id = element("div", "", "record-id");
-          id.appendChild(element("span", `#${String(item.submitId).padStart(4, "0")}`, "subline mono"));
+          id.appendChild(element("span", `#${String(item.submitId).padStart(4, "0")}`, "mono"));
           if (item.deletedAt) id.appendChild(element("span", "已删除", "tag deleted"));
-          if (compact) {
-            const meta = element("div", "", "card-meta");
-            meta.append(element("i", "", `store-dot ${item.storeKey}`), element("span", STORE_LABELS[item.storeKey]), element("span", "·"), element("span", POSITION_LABELS[item.position] || "未填写"));
-            if (item.deletedAt) meta.appendChild(element("span", "已删除", "tag deleted"));
-            copy.appendChild(meta);
-          } else copy.appendChild(id);
-          person.append(avatar, copy); return person;
+          copy.appendChild(id); person.append(avatar, copy); return person;
         }
         function storeCopy(item) {
           const wrapper = element("div", "", "store-copy");
-          const name = element("div", "", "store-name");
-          name.append(element("i", "", `store-dot ${item.storeKey}`), element("span", STORE_LABELS[item.storeKey] || item.storeKey));
-          wrapper.append(name, element("span", POSITION_LABELS[item.position] || "未填写", "muted"));
+          const badge = element("span", "", `store-badge store-${item.storeKey}`);
+          const dot = element("i", "", `store-dot ${item.storeKey}`); dot.setAttribute("aria-hidden", "true");
+          badge.append(dot, element("span", STORE_LABELS[item.storeKey] || item.storeKey));
+          wrapper.append(badge, element("span", POSITION_LABELS[item.position] || "岗位未填写", "position-label"));
           return wrapper;
         }
-        function documentSummary(item, compact = false) {
-          const complete = item.attachments.idCardFront && item.attachments.idCardBack;
-          const wrapper = element("div", "", compact ? "card-docs" : "");
-          const control = can("attachment:view") ? actionButton("", "documents", item.id, "doc-link") : element("div", "", "doc-link");
-          const line = element("span", "", "doc-line");
-          if (complete) line.appendChild(element("span", "✓", "doc-ok"));
-          line.appendChild(element("span", complete ? "身份证正反面" : "身份证资料不完整"));
-          control.appendChild(line);
+        function documentSummary(item) {
+          const present = Number(Boolean(item.attachments.idCardFront)) + Number(Boolean(item.attachments.idCardBack));
+          const control = can("attachment:view") ? actionButton("", "documents", item.id, "document-summary") : element("div", "", "document-summary");
           if (control.tagName === "BUTTON") control.setAttribute("aria-label", `查看${item.name}的证件`);
-          const health = element("span", item.attachments.healthCertificate ? "健康证已上传" : "健康证未上传 · 选填", compact ? "muted" : "doc-sub");
-          if (!compact && item.attachments.healthCertificate) health.classList.add("uploaded");
-          if (compact) wrapper.append(control, health);
-          else { control.appendChild(health); wrapper.appendChild(control); }
-          return wrapper;
+          const identity = element("span", "", `document-pill ${present === 2 ? "is-present" : "is-missing"}`);
+          const identityIcon = element("span", present === 2 ? "✓" : "!", "document-mark"); identityIcon.setAttribute("aria-hidden", "true");
+          identity.append(identityIcon, element("span", `身份证 ${present}/2`));
+          const hasHealth = Boolean(item.attachments.healthCertificate);
+          const health = element("span", "", `document-pill ${hasHealth ? "is-present" : "is-optional"}`);
+          const healthIcon = element("span", hasHealth ? "✓" : "–", "document-mark"); healthIcon.setAttribute("aria-hidden", "true");
+          health.append(healthIcon, element("span", hasHealth ? "健康证已上传" : "健康证选填 · 未上传"));
+          control.append(identity, health); return control;
         }
         function moreButton(item) {
           const button = actionButton("···", "more", item.id, "quiet more");
@@ -719,24 +832,35 @@
           button.setAttribute("aria-haspopup", "menu"); button.setAttribute("aria-expanded", "false");
           return button;
         }
+        function recordActions(item) {
+          const actions = element("div", "", "record-actions");
+          actions.appendChild(actionButton("查看", "detail", item.id, "record-view"));
+          if (item.deletedAt && can("employee:restore")) actions.appendChild(actionButton("恢复", "restore", item.id, "record-edit"));
+          else if (!item.deletedAt && can("employee:edit")) actions.appendChild(actionButton("编辑", "edit", item.id, "record-edit"));
+          actions.appendChild(moreButton(item)); return actions;
+        }
+        function recordDate(item) {
+          const time = element("time", formatTableDate(item.createdAt), "record-date mono");
+          time.dateTime = item.createdAt; time.title = `提交于 ${formatDate(item.createdAt)}`;
+          return time;
+        }
         function renderRows() {
           body.replaceChildren();
           const cards = document.getElementById("records-cards"); cards.replaceChildren();
           for (const item of state.items) {
-            const row = document.createElement("tr");
-            const cells = Array.from({ length: 6 }, () => document.createElement("td"));
+            const row = document.createElement("tr"); row.className = "employee-row";
+            const cells = Array.from({ length: 7 }, () => document.createElement("td"));
             cells[0].appendChild(personCell(item)); cells[1].appendChild(storeCopy(item));
-            cells[2].textContent = maskPhone(item.phone); cells[2].className = "mono";
-            cells[3].appendChild(documentSummary(item)); cells[4].textContent = formatTableDate(item.createdAt); cells[4].className = "table-date mono";
-            const actions = element("div", "", "row-actions");
-            if (item.deletedAt && can("employee:restore")) actions.appendChild(actionButton("恢复", "restore", item.id, "edit"));
-            else if (!item.deletedAt && can("employee:edit")) actions.appendChild(actionButton("编辑", "edit", item.id, "edit"));
-            actions.appendChild(moreButton(item)); cells[5].appendChild(actions); row.append(...cells); body.appendChild(row);
-            const card = element("article", "", "employee-card");
-            const top = element("div", "", "card-top"); top.append(personCell(item, true), moreButton(item));
-            const meta = element("div", "", "card-phone"); meta.append(element("span", maskPhone(item.phone), "mono"), element("span", `#${item.submitId}`, "mono small muted"));
-            const footer = element("div", "", "card-footer"); footer.append(element("span", `提交于 ${formatTableDate(item.createdAt).replace(/\n/g, " ")}`), actionButton("查看资料 →", "detail", item.id, "link"));
-            card.append(top, meta, documentSummary(item, true), footer); cards.appendChild(card);
+            cells[2].appendChild(element("span", item.phone || "未填写", "record-phone mono"));
+            cells[3].appendChild(element("span", item.identityCardNumber || "未识别", "record-identity mono"));
+            cells[4].appendChild(documentSummary(item)); cells[5].appendChild(recordDate(item));
+            cells[6].appendChild(recordActions(item)); row.append(...cells); body.appendChild(row);
+            const card = element("article", "", "employee-card"); card.setAttribute("aria-label", `${item.name}的员工资料`);
+            const top = element("div", "", "card-top"); top.append(personCell(item), storeCopy(item));
+            const contact = element("div", "", "record-contact"); contact.append(element("span", "手机号", "record-label"), element("span", item.phone || "未填写", "record-phone mono"));
+            const documents = element("div", "", "record-documents"); documents.appendChild(documentSummary(item));
+            const footer = element("div", "", "card-footer"); footer.append(recordDate(item), recordActions(item));
+            card.append(top, contact, documents, footer); cards.appendChild(card);
           }
         }
         function updateSummary() {
@@ -746,7 +870,7 @@
           document.getElementById("page-number").textContent = `${Math.floor(state.offset / state.limit) + 1} / ${Math.max(1, Math.ceil(state.total / state.limit))}`;
           prevButton.disabled = state.loading || state.offset === 0;
           nextButton.disabled = state.loading || end >= state.total;
-          document.getElementById("refresh-button").disabled = state.loading;
+          document.getElementById("query-button").disabled = state.loading;
           document.querySelector(".workspace").setAttribute("aria-busy", String(state.loading));
           const filtered = Boolean(state.search || state.storeKey);
           emptyState.hidden = state.loading || state.items.length > 0 || state.failed;
@@ -755,7 +879,6 @@
           document.getElementById("empty-reset").hidden = !filtered;
           document.getElementById("reset-filters").hidden = !filtered;
           document.getElementById("clear-search").hidden = !document.getElementById("search").value;
-          document.getElementById("filter-toggle").textContent = state.storeKey ? "筛选 · 1" : "筛选";
           for (const key of ["active", "deleted"]) document.getElementById(`${key}-count`).textContent = state.status === key && !state.loading && !state.failed ? String(state.total) : "";
           for (const button of document.querySelectorAll("[data-status]")) {
             const active = button.dataset.status === state.status;
@@ -873,21 +996,19 @@
             container.appendChild(card);
           }
         }
-        function sensitiveValue(value, masked, copyable = true) {
-          const wrapper = element("div", "", "sensitive-row"), text = element("span", masked, "mono");
-          wrapper.appendChild(text);
-          if (value) {
-            const toggle = element("button", "显示", "quiet"), copy = element("button", "复制", "quiet");
-            toggle.type = copy.type = "button"; toggle.setAttribute("aria-expanded", "false");
-            toggle.addEventListener("click", () => { const expanded = toggle.getAttribute("aria-expanded") !== "true"; text.textContent = expanded ? value : masked; toggle.textContent = expanded ? "收起" : "显示"; toggle.setAttribute("aria-expanded", String(expanded)); });
-            copy.addEventListener("click", () => copyText(value)); wrapper.appendChild(toggle); if (copyable) wrapper.appendChild(copy);
+        function fullValue(value, copyable = true) {
+          const wrapper = element("div", "", "sensitive-row");
+          wrapper.appendChild(element("span", value || "未识别", "mono"));
+          if (value && copyable) {
+            const copy = element("button", "复制", "quiet"); copy.type = "button";
+            copy.addEventListener("click", () => copyText(value)); wrapper.appendChild(copy);
           }
           return wrapper;
         }
         function renderBasic(item) {
           const content = document.getElementById("detail-basic"); content.replaceChildren(element("h3", "基本信息", "section-title"));
           const grid = element("div", "", "info-grid");
-          for (const [label, value] of [["姓名", item.name], ["手机号", sensitiveValue(item.phone, maskPhone(item.phone), false)], ["所属门店", STORE_LABELS[item.storeKey]], ["岗位", POSITION_LABELS[item.position] || "未填写"], ["身份证号", sensitiveValue(item.identityCardNumber, maskIdentity(item.identityCardNumber))]]) {
+          for (const [label, value] of [["姓名", item.name], ["手机号", fullValue(item.phone, false)], ["所属门店", STORE_LABELS[item.storeKey]], ["岗位", POSITION_LABELS[item.position] || "未填写"], ["身份证号", fullValue(item.identityCardNumber)]]) {
             const card = element("div", "", `info-cell${label === "身份证号" ? " full" : ""}`);
             card.appendChild(element("div", label, "detail-label"));
             card.appendChild(value instanceof Node ? value : element("div", value || "-", "detail-value")); grid.appendChild(card);
@@ -1053,15 +1174,11 @@
         }
         function resetFilters() { document.getElementById("search").value = ""; document.getElementById("store-key").value = ""; applyFilters(); }
         document.getElementById("filter-form").addEventListener("submit", event => { event.preventDefault(); applyFilters(); });
-        document.getElementById("search").addEventListener("input", event => { clearTimeout(searchTimer); document.getElementById("clear-search").hidden = !event.target.value; if (!event.isComposing) searchTimer = setTimeout(applyFilters, 300); });
-        document.getElementById("search").addEventListener("compositionend", () => { clearTimeout(searchTimer); searchTimer = setTimeout(applyFilters, 300); });
-        document.getElementById("store-key").addEventListener("change", applyFilters);
+        document.getElementById("search").addEventListener("input", event => { document.getElementById("clear-search").hidden = !event.target.value; });
         document.getElementById("limit").addEventListener("change", event => { state.limit = Number(event.target.value); state.offset = 0; void loadRecords(); });
         document.getElementById("reset-filters").addEventListener("click", resetFilters); document.getElementById("empty-reset").addEventListener("click", resetFilters);
         document.getElementById("clear-search").addEventListener("click", () => { document.getElementById("search").value = ""; applyFilters(); document.getElementById("search").focus(); });
-        document.getElementById("filter-toggle").addEventListener("click", event => { const open = document.getElementById("filter-form").classList.toggle("filters-open"); event.currentTarget.setAttribute("aria-expanded", String(open)); });
         document.querySelectorAll("[data-status]").forEach(button => button.addEventListener("click", () => { state.status = button.dataset.status; applyFilters(); }));
-        document.getElementById("refresh-button").addEventListener("click", loadRecords);
         prevButton.addEventListener("click", () => { if (!state.loading) { state.offset = Math.max(0, state.offset - state.limit); void loadRecords(); } });
         nextButton.addEventListener("click", () => { if (!state.loading) { state.offset += state.limit; void loadRecords(); } });
         document.getElementById("detail-edit").addEventListener("click", () => { if (detailItem) void openEdit(detailItem.id); });
