@@ -561,8 +561,36 @@ button.document-summary:hover { background:var(--brand-soft); }
 
 .record-identity { font-size:12px;white-space:nowrap; }
 
+/* Mobile cards: no avatar, record number or bottom action bar. */
+.compact-card { padding:10px 14px 12px; }
+.compact-top { display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:44px;margin-bottom:6px; }
+.compact-heading { display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;min-width:0; }
+.compact-card .compact-name { display:inline-flex;align-items:center;min-width:44px;min-height:44px;padding:0;font-size:16px;font-weight:650; }
+.compact-heading .store-copy { flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px; }
+.compact-heading .store-badge { padding:3px 7px;font-size:11px; }
+.compact-heading .position-label { font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;padding:0; }
+.compact-top .more { display:inline-flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;padding:0;border-radius:10px;flex-shrink:0;font-size:20px;letter-spacing:0;color:var(--muted); }
+.compact-fields { display:grid;grid-template-columns:58px minmax(0,1fr);align-items:baseline;gap:7px 8px;margin:0 0 4px;padding:0; }
+.compact-fields dt { color:var(--muted);font-size:11px;line-height:1.5; }
+.compact-fields dd { margin:0;color:var(--ink);font-size:13px;line-height:1.5;overflow-wrap:anywhere; }
+.compact-documents .document-summary { width:100%;min-height:44px;gap:6px;padding:5px 0; }
+.compact-documents .document-pill { font-size:11px;padding:4px 6px; }
+.compact-submitted { display:block;color:var(--muted);font-size:10px;line-height:1.5;padding-top:3px; }
+@media(max-width:360px){
+ .compact-card { padding:8px 12px 10px; }
+ .compact-heading { gap:0 6px; }
+ .compact-heading .store-copy { gap:4px; }
+ .compact-heading .store-badge { font-size:10px;padding:3px 6px; }
+ .compact-heading .position-label { font-size:11px; }
+ .compact-fields { grid-template-columns:54px minmax(0,1fr);gap:7px 6px; }
+ .compact-documents .document-pill { font-size:10px; }
+}
+
+.employee-row[data-record-id], .compact-card[data-record-id] { cursor:pointer; }
+.employee-row[data-record-id]:focus-visible, .compact-card[data-record-id]:focus-visible { outline:3px solid var(--brand);outline-offset:-3px; }
+
 </style>
-    </head>
+      </head>
   <body>
       <nav class="topbar" aria-label="员工中心导航">
         <div class="center-switcher" id="center-switcher" hidden>
@@ -604,7 +632,7 @@ button.document-summary:hover { background:var(--brand-soft); }
         <div id="empty-state" class="empty" hidden><h3 id="empty-title">暂无员工资料</h3><p id="empty-description"></p><button id="empty-reset" type="button" hidden>清除筛选</button></div>
         <div class="foot"><div class="record-summary"><span id="summary-range">共 0 条记录</span><span id="summary-count" class="visually-hidden">正在加载…</span></div><div class="pagination"><select id="limit" aria-label="每页数量"><option value="20">20 条 / 页</option><option value="50" selected>50 条 / 页</option><option value="100">100 条 / 页</option></select><button id="prev-button" type="button" aria-label="上一页">上一页</button><span id="page-number" class="small" aria-live="polite">1 / 1</span><button id="next-button" type="button" aria-label="下一页">下一页</button></div></div>
       </section>
-      <footer class="footer-note"><span>健康证为选填资料，未上传不代表资料不合格。</span><span>员工信息管理 / STAFF</span></footer>
+      <footer class="footer-note"><span>健康证未上传不代表资料不合格。</span><span>员工信息管理 / STAFF</span></footer>
     </main>
 
     <div class="modal" id="detail-modal" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title"><header class="dialog-header"><span class="small muted" id="detail-record-id">员工资料</span><button data-close="detail-modal" type="button" aria-label="关闭详情">×</button></header><div class="detail-person"><span class="avatar" id="detail-avatar" aria-hidden="true"></span><div><h2 id="detail-title">员工资料</h2><p id="detail-subtitle"></p></div><span class="detail-version" id="detail-version"></span></div><div class="detail-tabs"><div class="tabs" role="tablist" aria-label="员工资料分类"><button type="button" class="tab active" role="tab" id="tab-basic" data-detail-tab="basic" aria-selected="true" aria-controls="detail-basic">基本资料</button><button type="button" class="tab" role="tab" id="tab-documents" data-detail-tab="documents" aria-selected="false" aria-controls="detail-documents">证件资料</button><button type="button" class="tab" role="tab" id="tab-history" data-detail-tab="history" aria-selected="false" aria-controls="detail-history">修改历史</button></div></div><div class="dialog-body"><section id="detail-basic" role="tabpanel" aria-labelledby="tab-basic"></section><section id="detail-documents" role="tabpanel" aria-labelledby="tab-documents" hidden><div class="doc-tabs" id="document-tabs"></div><div id="document-viewer"><div class="preview-body"><div id="document-status" class="preview-status" role="status"></div><img id="document-image" alt="当前证件预览" hidden><canvas id="document-pdf-canvas" aria-label="PDF 首页预览" hidden></canvas><iframe id="document-frame" title="PDF 证件预览" sandbox hidden></iframe></div></div><p id="document-meta"></p><a id="document-download" class="download-link" download hidden>下载原文件</a></section><section id="detail-history" role="tabpanel" aria-labelledby="tab-history" hidden></section></div><footer class="drawer-footer"><span>记录与历史版本均可追溯</span><div class="flex"><button id="detail-copy-phone" type="button">复制手机号</button><button id="detail-edit" class="primary" type="button" hidden>编辑资料</button><button id="detail-restore" class="primary" type="button" hidden>恢复资料</button></div></footer></section></div>
@@ -823,7 +851,7 @@ button.document-summary:hover { background:var(--brand-soft); }
           const hasHealth = Boolean(item.attachments.healthCertificate);
           const health = element("span", "", `document-pill ${hasHealth ? "is-present" : "is-optional"}`);
           const healthIcon = element("span", hasHealth ? "✓" : "–", "document-mark"); healthIcon.setAttribute("aria-hidden", "true");
-          health.append(healthIcon, element("span", hasHealth ? "健康证已上传" : "健康证选填 · 未上传"));
+          health.append(healthIcon, element("span", hasHealth ? "健康证已上传" : "健康证未上传"));
           control.append(identity, health); return control;
         }
         function moreButton(item) {
@@ -848,19 +876,26 @@ button.document-summary:hover { background:var(--brand-soft); }
           body.replaceChildren();
           const cards = document.getElementById("records-cards"); cards.replaceChildren();
           for (const item of state.items) {
-            const row = document.createElement("tr"); row.className = "employee-row";
+            const row = document.createElement("tr"); row.className = "employee-row"; row.dataset.recordId = item.id; row.tabIndex = 0; row.setAttribute("aria-label", `查看${item.name}的资料`);
             const cells = Array.from({ length: 7 }, () => document.createElement("td"));
             cells[0].appendChild(personCell(item)); cells[1].appendChild(storeCopy(item));
             cells[2].appendChild(element("span", item.phone || "未填写", "record-phone mono"));
             cells[3].appendChild(element("span", item.identityCardNumber || "未识别", "record-identity mono"));
             cells[4].appendChild(documentSummary(item)); cells[5].appendChild(recordDate(item));
             cells[6].appendChild(recordActions(item)); row.append(...cells); body.appendChild(row);
-            const card = element("article", "", "employee-card"); card.setAttribute("aria-label", `${item.name}的员工资料`);
-            const top = element("div", "", "card-top"); top.append(personCell(item), storeCopy(item));
-            const contact = element("div", "", "record-contact"); contact.append(element("span", "手机号", "record-label"), element("span", item.phone || "未填写", "record-phone mono"));
-            const documents = element("div", "", "record-documents"); documents.appendChild(documentSummary(item));
-            const footer = element("div", "", "card-footer"); footer.append(recordDate(item), recordActions(item));
-            card.append(top, contact, documents, footer); cards.appendChild(card);
+            const card = element("article", "", "employee-card compact-card"); card.setAttribute("aria-label", `查看${item.name}的资料`); card.dataset.recordId = item.id; card.tabIndex = 0;
+            const top = element("div", "", "compact-top");
+            const heading = element("div", "", "compact-heading");
+            heading.append(actionButton(item.name, "detail", item.id, "name compact-name"), storeCopy(item));
+            if (item.deletedAt) heading.appendChild(element("span", "已删除", "tag deleted"));
+            top.append(heading, moreButton(item));
+            const fields = element("dl", "", "compact-fields");
+            for (const [label, value, className] of [["手机号",item.phone || "未填写","record-phone"],["身份证号",item.identityCardNumber || "未识别","card-identity"]]) {
+              fields.append(element("dt",label),element("dd",value,`mono ${className}`));
+            }
+            const documents = element("div", "", "compact-documents"); documents.appendChild(documentSummary(item));
+            const submitted = element("time", `提交于 ${formatTableDate(item.createdAt).replace(/\n/g," ")}`, "compact-submitted"); submitted.dateTime=item.createdAt;
+            card.append(top,fields,documents,submitted); cards.appendChild(card);
           }
         }
         function updateSummary() {
@@ -986,7 +1021,7 @@ button.document-summary:hover { background:var(--brand-soft); }
           container.replaceChildren();
           for (const [key, label] of Object.entries(ATTACHMENT_LABELS)) {
             const attachment = attachments[key], card = element("div", "", "attachment-card"), info = element("div");
-            info.append(element("strong", label), element("div", attachment ? attachment.originalName : key === "healthCertificate" ? "未上传 · 选填" : "未上传", "muted"));
+            info.append(element("strong", label), element("div", attachment ? attachment.originalName : "未上传", "muted"));
             if (attachment) info.appendChild(element("div", `${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`, "muted"));
             card.appendChild(info);
             if (attachment && can("attachment:view")) {
@@ -1083,7 +1118,7 @@ button.document-summary:hover { background:var(--brand-soft); }
           resetPreview("document"); document.getElementById("document-meta").textContent = "";
           const status = document.getElementById("document-status"); status.hidden = false;
           if (!can("attachment:view")) { status.textContent = "当前账号没有查看附件的权限。"; return; }
-          if (!attachment) { status.textContent = key === "healthCertificate" ? "健康证暂未上传，为选填资料。" : "该证件未上传。"; return; }
+          if (!attachment) { status.textContent = key === "healthCertificate" ? "健康证暂未上传。" : "该证件未上传。"; return; }
           void loadPreview(attachmentButton(attachment, ATTACHMENT_LABELS[key]), "document");
         }
         async function openEdit(id) {
@@ -1198,7 +1233,15 @@ button.document-summary:hover { background:var(--brand-soft); }
         document.addEventListener("click", event => {
           const close = event.target.closest("[data-close]"); if (close) { closeModal(close.dataset.close); return; }
           const preview = event.target.closest("[data-preview-url]"); if (preview) { void openPreview(preview); return; }
-          const action = event.target.closest("[data-action]"); if (!action) return;
+          const action = event.target.closest("[data-action]");
+          if (!action) {
+            const record = event.target.closest("[data-record-id]");
+            const interactive = event.target.closest('button, a, input, select, textarea, summary, [role="button"], [contenteditable]');
+            if (record && !interactive && window.getSelection()?.isCollapsed !== false) {
+              closeRowMenu(); void openDetail(record.dataset.recordId);
+            }
+            return;
+          }
           const { action: kind, id } = action.dataset;
           if (kind !== "more") closeRowMenu();
           if (kind === "detail" || kind === "documents" || kind === "history") void openDetail(id, kind === "detail" ? "basic" : kind);
@@ -1210,6 +1253,9 @@ button.document-summary:hover { background:var(--brand-soft); }
         document.querySelectorAll(".modal").forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) { if (modal.id === "confirm-modal") finishConfirmation(false); else closeModal(modal.id); } }));
         document.addEventListener("keydown", event => {
           const modal = topModal();
+          if (!modal && event.target.matches("[data-record-id]") && ["Enter", " "].includes(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault(); closeRowMenu(); void openDetail(event.target.dataset.recordId); return;
+          }
           if (event.key === "Escape") {
             if (modal) { event.preventDefault(); if (modal.id === "confirm-modal") finishConfirmation(false); else closeModal(modal.id); }
             else { const trigger = document.querySelector('[data-action="more"][aria-expanded="true"]'); closeRowMenu(); trigger?.focus(); }
