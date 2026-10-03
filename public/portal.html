@@ -298,7 +298,7 @@
       .center-switcher-option[data-center="expense"] svg { color: #3478f6; }
       .center-switcher-option[data-center="invoice"] svg { color: #34b978; }
       .center-switcher-option[data-center="staff"] svg { color: #f0a52b; }
-      .center-switcher-option[data-management] svg { color: #a78bfa; }
+      .center-switcher-option[data-management] svg { color: #8e8e93; }
       .center-switcher-check { color: var(--brand); font-size: 22px; font-weight: 800; text-align: center; }
       .topbar-actions { display: flex; align-items: center; gap: 6px; }
       .logout-form { margin: 0; }
@@ -589,11 +589,12 @@ button.document-summary:hover { background:var(--brand-soft); }
 .employee-row[data-record-id], .compact-card[data-record-id] { cursor:pointer; }
 .employee-row[data-record-id]:focus-visible, .compact-card[data-record-id]:focus-visible { outline:3px solid var(--brand);outline-offset:-3px; }
 
-.center-switcher-option[data-center="business"] svg { color: #0d9488; }
-:root[data-theme="dark"] .center-switcher-option[data-center="business"] svg { color: #5eead4; }
+.center-switcher-option[data-center="business"] svg { color: #a78bfa; }
+:root[data-theme="dark"] .center-switcher-option[data-center="business"] svg { color: #a78bfa; }
 /* Shared selector palette, independent of each dashboard's page colors. */
 .center-switcher-menu { --ink:#17202a; --line:#e3e8ef; --surface:#fff; --surface-strong:#fff; --surface-muted:#f5f7fa; --soft:#f5f7fa; --brand:#007aff; --brand-soft:#eaf3ff; background:var(--surface-strong); color:var(--ink); font-family:-apple-system,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; line-height:1.5; box-shadow:0 24px 60px rgba(28,28,30,.22); }
 :root[data-theme="dark"] .center-switcher-menu { --ink:#f1f4f8; --line:#343942; --surface:#1d2026; --surface-strong:#1d2026; --surface-muted:#262a31; --soft:#262a31; --brand:#72b5ff; --brand-soft:#23354c; }
+:root[data-theme="dark"] .center-switcher-option[data-management] svg, :root[data-theme="dark"] .center-switcher-option[data-center="accounts"] svg { color:#a1a1aa; }
 </style>
       </head>
   <body>
