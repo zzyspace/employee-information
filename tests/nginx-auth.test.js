@@ -9,7 +9,7 @@ const nginx = fs.readFileSync(
   "utf8",
 );
 const deployScript = fs.readFileSync(
-  path.join(root, "deploy/deploy-employee-information.sh"),
+  path.join(root, "deploy/release.sh"),
   "utf8",
 );
 const portalHtml = fs.readFileSync(path.join(root, "public/portal.html"), "utf8");

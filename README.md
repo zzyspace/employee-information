@@ -105,13 +105,14 @@ Nginx 对 `/staff/` 的请求体上限为 65MB，允许一次提交三个 20MB �
 
 - `deploy/systemd/employee-information.service`
 - `deploy/nginx/employee-information.locations.conf`（迁移前兼容快照）
-- `deploy/deploy-employee-information.sh`
+- `deploy/release.sh`（comeover 共享部署脚本使用的本项目发布步骤）
 
-部署脚本只管理应用依赖、systemd 服务和健康检查，不写入或 reload Nginx。
-服务器必须已经存在 `/opt/employee-information/current` Git checkout；共享入口由
-`server-infra` 独立发布。
-
-本轮没有执行生产部署。
+在 comeover 仓库根目录运行 `npm run deploy -- employee-information`（先 `npm run mirrors:push`）。
+共享脚本 `scripts/deploy-release.sh` 把已发布的镜像提交部署到
+`/opt/employee-information/releases/<SHA>`：确保 `employeeinfo` 账户和数据目录存在，
+复用或经本机代理安装生产依赖，校验静态页面，用 `nobody` 跑测试，再切换 `current`、
+重启服务并检查健康接口和 `/staff` 登录跳转；失败会恢复上一个版本。
+部署不写入或 reload Nginx，共享入口由 `server-infra` 独立发布。
 
 ## 备份
 

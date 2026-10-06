@@ -1,0 +1,119 @@
+/* Shared with the current invoice filter pattern; staff-specific record flows stay intact. */
+.visually-hidden { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0; }
+.staff-filters { border:1px solid var(--line);border-radius:28px;background:var(--surface);box-shadow:var(--shadow);backdrop-filter:blur(20px);padding:14px;margin-bottom:18px; }
+.staff-filters .toolbar { display:grid;grid-template-columns:minmax(150px,180px) minmax(200px,1fr) auto;align-items:center;gap:10px;padding:0; }
+.staff-filters .search { width:100%;min-width:0; }
+.staff-filters #store-key { width:100%;min-width:0;height:40px;font-size:14px; }
+.staff-filters .search input { height:40px;font-size:14px; }
+.staff-filters .search-mark { top:12px; }
+.staff-filters .search-clear { top:4px; }
+.query-button { min-height:40px;padding:0 20px;font-size:14px; }
+.staff-filters .notice-line { padding:0;margin:0; }
+.staff-filters .status:not(.error) { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+.staff-filters .status.error { padding-top:12px;line-height:1.65;font-size:13px; }
+.workspace-tabs { height:auto;min-height:68px;padding:12px 20px;gap:12px; }
+.workspace-tabs .tabs { height:auto;gap:6px;flex-wrap:wrap; }
+.workspace-tabs .tab { border:1px solid transparent;border-radius:12px;min-height:40px;padding:0 12px;gap:6px;font-size:14px; }
+.workspace-tabs .tab.active { background:var(--brand-soft);color:var(--brand); }
+.workspace-tabs .tab.active:after { display:none; }
+.workspace-tabs .tab:not(.active):hover { background:var(--surface-hover); }
+.workspace-tabs .count { padding:2px 6px;min-width:22px; }
+.workspace-tabs .filter-reset { display:block;white-space:nowrap;flex-shrink:0;min-height:40px;color:var(--brand);font-size:12px;padding:0 6px; }
+.foot { padding:14px 18px;flex-wrap:wrap; }
+.pagination { gap:8px; }
+.pagination button { min-height:40px;padding:0 12px;font-size:13px; }
+.pagination select { display:block;min-height:40px;border-radius:10px;background:var(--surface-input);font-size:13px; }
+.record-summary { margin-right:auto; }
+.dialog-header button[data-close] { min-width:44px;min-height:44px;border-radius:12px; }
+.detail-tabs .tabs { gap:20px; }
+@media(max-width:650px){
+ .staff-filters { padding:12px; }
+ .staff-filters .toolbar { grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"store store" "search query";gap:8px; }
+ .staff-filters #store-key { grid-area:store;display:block;min-width:0;height:44px;font-size:16px; }
+ .staff-filters .search { grid-area:search;width:100%; }
+ .staff-filters .search input { height:44px;font-size:16px; }
+ .staff-filters .search-mark { top:14px; }
+ .staff-filters .search-clear { top:6px; }
+ .query-button { grid-area:query;min-height:44px;padding:0 18px; }
+ .workspace-tabs { padding:0 0 12px;min-height:56px;border:0;gap:4px; }
+ .workspace-tabs .tabs { gap:4px;flex-wrap:nowrap; }
+ .workspace-tabs .tab { min-height:44px;padding:0 8px;font-size:13px;gap:4px; }
+ .workspace-tabs .filter-reset { min-height:44px;font-size:12px; }
+ .records-cards { gap:12px; }
+ .employee-card { padding:14px 16px 0; }
+ .card-phone { padding:8px 0 10px; }
+ .card-footer { margin-top:8px; }
+ .foot { padding:16px 0;gap:12px; }
+ .record-summary { width:100%;font-size:12px; }
+ .pagination { width:100%;justify-content:space-between;gap:6px; }
+ .pagination select { display:block;min-height:44px;margin-right:auto;font-size:16px;max-width:132px; }
+ .pagination button { min-height:44px;padding:0 10px;white-space:nowrap; }
+ .pagination #page-number { font-size:11px;white-space:nowrap; }
+}
+@media(max-width:360px){.workspace-tabs .tab { padding:0 5px;font-size:12px; }.workspace-tabs .count { min-width:18px;padding:2px 4px; }.pagination select { max-width:111px;font-size:14px; }.pagination button { padding:0 8px;font-size:12px; }}
+
+/* A shared employee record vocabulary for desktop rows and mobile cards. */
+.employee-row td { height:98px;padding:16px 20px; }
+.employee-row .person,.employee-card .person { gap:11px;min-width:0; }
+.employee-row .avatar,.employee-card .avatar { width:40px;height:40px;border-radius:13px;font-size:15px;font-weight:600; }
+.person-copy { min-width:0; }
+.employee-row .name,.employee-card .name { font-size:15px;font-weight:650;line-height:1.4;padding:0;min-height:0; }
+.employee-row .record-id,.employee-card .record-id { margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px;line-height:1.4;color:var(--muted); }
+.store-copy { display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0; }
+.store-badge { display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 9px;border-radius:999px;font-size:12px;line-height:1.45;background:var(--brand-soft);color:var(--brand); }
+.store-badge > span { overflow-wrap:anywhere; }
+.store-badge .store-dot { flex:0 0 5px;height:5px;width:5px;background:currentColor; }
+.store-peanut { color:var(--warning);background:color-mix(in srgb,var(--warning) 10%,transparent); }
+.store-fuzzy_qz { color:#8657b0;background:rgba(134,87,176,.10); }
+:root[data-theme="dark"] .store-fuzzy_qz { color:#c9a6ee;background:rgba(201,166,238,.13); }
+.position-label { color:var(--muted);font-size:12px;padding-left:2px; }
+.record-phone { font-size:13px;white-space:nowrap; }
+.document-summary { display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:44px;max-width:100%;padding:5px 0;border:0;border-radius:10px;background:transparent;text-align:left;color:var(--ink);font-size:12px;font-weight:500; }
+button.document-summary:hover { background:var(--brand-soft); }
+.document-pill { display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:8px;padding:5px 7px;font-size:11px;line-height:1.45; }
+.document-mark { font-size:11px;font-weight:700; }
+.document-pill.is-present { color:var(--success);background:color-mix(in srgb,var(--success) 9%,transparent); }
+.document-pill.is-missing { color:var(--warning);background:color-mix(in srgb,var(--warning) 10%,transparent); }
+.document-pill.is-optional { color:var(--muted);background:var(--soft); }
+.record-date { display:block;white-space:pre-line;color:var(--muted);font-size:11px;line-height:1.75; }
+.record-actions { display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-shrink:0; }
+.record-actions button { display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 9px;font-size:12px;white-space:nowrap;border-radius:10px; }
+.record-actions .record-view { color:var(--brand);background:var(--brand-soft);border-color:transparent;font-weight:650; }
+.record-actions .record-edit { background:var(--surface-strong);color:var(--ink);border-color:var(--line); }
+.record-actions .more { width:32px;min-width:32px;padding:0;font-size:18px;letter-spacing:0;color:var(--muted);border-color:transparent;background:transparent; }
+.record-actions .more:hover { background:var(--soft); }
+.employee-card { padding:16px 16px 0;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 12px 32px rgba(30,70,120,.08);backdrop-filter:blur(20px);min-width:0; }
+.employee-card .card-top { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.employee-card .person { flex:1; }
+.employee-card .name { min-height:44px;display:flex;align-items:center; }
+.employee-card .record-id { margin-top:0; }
+.employee-card .card-top > .store-copy { align-items:flex-end;max-width:44%; }
+.record-contact { display:flex;align-items:center;gap:12px;padding:13px 0 10px; }
+.record-label { font-size:11px;color:var(--muted); }
+.record-documents { border-radius:12px;background:var(--preview-body);padding:0 8px; }
+.record-documents .document-summary { width:100%;gap:6px; }
+.employee-card .card-footer { display:flex;align-items:center;justify-content:space-between;gap:8px;height:auto;min-height:64px;margin-top:10px;border-top:1px solid var(--line);padding:8px 0; }
+.employee-card .record-actions button { min-height:44px;padding:0 10px; }
+.employee-card .record-actions .more { width:36px;min-width:36px;padding:0; }
+.employee-card .record-date { font-size:10px; }
+@media(min-width:981px){ .table-scroll table { min-width:1280px; } }
+@media(max-width:980px){
+ .table-scroll { display:none; }
+ .records-cards { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px; }
+ .employee-card .record-phone { font-size:13px; }
+}
+@media(max-width:650px){
+ .records-cards { grid-template-columns:minmax(0,1fr);padding:0;gap:12px; }
+ .employee-card .name { font-size:16px; }
+}
+@media(max-width:360px){
+ .employee-card { padding:12px 12px 0; }
+ .employee-card .avatar { width:34px;height:34px;border-radius:11px; }
+ .employee-card .person { gap:8px; }
+ .employee-card .card-top { gap:8px; }
+ .employee-card .store-badge { padding:4px 7px;font-size:11px; }
+ .employee-card .record-actions { gap:4px; }
+ .employee-card .record-actions button { padding:0 8px; }
+}
+
+.record-identity { font-size:12px;white-space:nowrap; }
