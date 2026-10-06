@@ -36,7 +36,9 @@ test("employee portal exposes a POST logout action", () => {
   assert.match(portalHtml, /href="\/invoice"/);
   assert.match(portalHtml, /href="\/staff" aria-current="page"/);
   assert.match(portalHtml, /\.center-switcher-option\[aria-current="page"\] \{ background: var\(--brand-soft\); \}/);
-  assert.match(portalHtml, /\.center-switcher-option\[data-management\] svg \{ color: #a78bfa; \}/);
+  assert.match(portalHtml, /\.center-switcher-option\[data-management\] svg \{ color: #8e8e93; \}/);
+  assert.match(portalHtml, /:root\[data-theme="dark"\] \.center-switcher-option\[data-management\] svg, :root\[data-theme="dark"\] \.center-switcher-option\[data-center="accounts"\] svg \{ color:#a1a1aa; \}/);
+  assert.match(portalHtml, /\.center-switcher-option\[data-center="business"\] svg \{ color: #a78bfa; \}/);
   assert.match(portalHtml, /id="center-switcher-chevron"[^>]+hidden/);
   assert.match(portalHtml, /centerSwitcherChevron\.toggleAttribute\("hidden", centerSwitcherTrigger\.disabled\)/);
   assert.match(portalHtml, /M8 7V5\.5A2\.5 2\.5 0 0 1 10\.5 3H22/);
