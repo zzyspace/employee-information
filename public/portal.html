@@ -14,7 +14,6 @@
       /* Shared visual tokens from the current invoice admin. */
       :root {
         --bg: #f2f2f7;
-        --bg-accent: #e9edf7;
         --surface: rgba(255, 255, 255, 0.84);
         --surface-strong: #ffffff;
         --line: rgba(60, 60, 67, 0.16);
@@ -32,8 +31,6 @@
         --preview-head: rgba(255, 255, 255, 0.76);
         --preview-body: rgba(242, 242, 247, 0.82);
         --modal-backdrop: rgba(28, 28, 30, 0.38);
-        --page-glow-start: rgba(0, 122, 255, 0.16);
-        --page-glow-end: rgba(90, 200, 250, 0.18);
         --shadow: 0 24px 60px rgba(28, 28, 30, 0.1);
         --radius-xl: 28px;
         --radius-lg: 18px;
@@ -48,7 +45,6 @@
       }
       :root[data-theme="dark"] {
         --bg: #0d1117;
-        --bg-accent: #151b25;
         --surface: rgba(27, 34, 45, 0.88);
         --surface-strong: #202938;
         --line: rgba(235, 242, 255, 0.14);
@@ -66,8 +62,6 @@
         --preview-head: rgba(32, 41, 56, 0.94);
         --preview-body: rgba(14, 19, 27, 0.92);
         --modal-backdrop: rgba(0, 0, 0, 0.68);
-        --page-glow-start: rgba(32, 110, 210, 0.22);
-        --page-glow-end: rgba(50, 170, 210, 0.14);
         --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
         --success: #78d59e;
         --warning: #ffd36a;
@@ -75,7 +69,7 @@
         color-scheme: dark;
       }
       * { box-sizing:border-box }
-      body { margin:0;min-height:100vh;--admin-page-background: radial-gradient(circle at top left,var(--page-glow-start),transparent 28%),radial-gradient(circle at top right,var(--page-glow-end),transparent 26%),linear-gradient(180deg,var(--bg) 0%,var(--bg-accent) 100%); background: var(--bg-accent); isolation: isolate;color:var(--ink);font-family:"SF Pro Text","PingFang SC","Noto Sans SC",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased }
+      body { margin:0;min-height:100vh;color:var(--ink);font-family:"SF Pro Text","PingFang SC","Noto Sans SC",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased }
       button, input, select { font:inherit }
       button { cursor:pointer;color:inherit }
       button, a, input, select { -webkit-tap-highlight-color:transparent }
@@ -540,15 +534,6 @@ button.document-summary:hover { background:var(--brand-soft); }
         .page-heading p { margin-top: 8px; font-size: 11px; }
       }
 
-/* Keep the gradient tied to the viewport, independent of list length. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--admin-page-background);
-}
 </style>
 
 <link rel="stylesheet" href="/auth/accounts/user-menu.css">
