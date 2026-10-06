@@ -15,6 +15,10 @@ release_prepare() {
   HTTPS_PROXY=$EMPLOYEE_INFORMATION_PROXY_URL HTTP_PROXY=$EMPLOYEE_INFORMATION_PROXY_URL install_node_modules
   node -e 'const Database=require("./node_modules/better-sqlite3");const db=new Database(":memory:");db.prepare("SELECT 1").get();db.close()'
   npm run build
+  # The top bar comes from admin-auth-gateway; deploy the gateway first.
+  for asset in admin-shell.css admin-shell.js admin-theme.js; do
+    expect_status "https://comeover.cn/auth/accounts/$asset" 200
+  done
 }
 
 release_test() {

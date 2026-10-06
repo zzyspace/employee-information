@@ -113,6 +113,7 @@ Nginx 对 `/staff/` 的请求体上限为 65MB，允许一次提交三个 20MB �
 复用或经本机代理安装生产依赖，校验静态页面，用 `nobody` 跑测试，再切换 `current`、
 重启服务并检查健康接口和 `/staff` 登录跳转；失败会恢复上一个版本。
 部署不写入或 reload Nginx，共享入口由 `server-infra` 独立发布。
+后台顶栏（切换菜单、深浅主题、退出登录）使用网关提供的共享后台外壳 `/auth/accounts/admin-shell.*`，见 admin-auth-gateway README「共享后台外壳」；须先部署网关，`release_prepare` 会确认线上已提供这些文件。
 
 ## 备份
 

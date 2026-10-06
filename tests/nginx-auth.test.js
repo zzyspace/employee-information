@@ -26,29 +26,16 @@ test("nginx protects employee portal and admin API before the public prefix", ()
   );
 });
 
-test("employee portal exposes a POST logout action", () => {
-  assert.match(portalHtml, /<form class="logout-form" method="post" action="\/logout">/);
-  assert.match(portalHtml, /name="returnTo" value="\/staff"/);
-  assert.match(portalHtml, /<nav class="topbar" aria-label="员工中心导航">/);
-  assert.match(portalHtml, /<span>员工中心<\/span>/);
-  assert.match(portalHtml, /id="center-switcher" hidden/);
-  assert.match(portalHtml, /href="\/expense"/);
-  assert.match(portalHtml, /href="\/invoice"/);
-  assert.match(portalHtml, /href="\/staff" aria-current="page"/);
-  assert.match(portalHtml, /\.center-switcher-option\[aria-current="page"\] \{ background: var\(--brand-soft\); \}/);
-  assert.match(portalHtml, /\.center-switcher-option\[data-management\] svg \{ color: #8e8e93; \}/);
-  assert.match(portalHtml, /:root\[data-theme="dark"\] \.center-switcher-option\[data-management\] svg, :root\[data-theme="dark"\] \.center-switcher-option\[data-center="accounts"\] svg \{ color:#a1a1aa; \}/);
-  assert.match(portalHtml, /\.center-switcher-option\[data-center="business"\] svg \{ color: #a78bfa; \}/);
-  assert.match(portalHtml, /id="center-switcher-chevron"[^>]+hidden/);
-  assert.match(portalHtml, /centerSwitcherChevron\.toggleAttribute\("hidden", centerSwitcherTrigger\.disabled\)/);
-  assert.match(portalHtml, /M8 7V5\.5A2\.5 2\.5 0 0 1 10\.5 3H22/);
-  assert.match(portalHtml, /link\.innerHTML = '[^']+<span>账号管理<\/span><span><\/span>'/);
-  assert.match(portalHtml, /allowed\.includes\(link\.dataset\.center\)/);
-  assert.match(portalHtml, /centerSwitcherBackdrop\.addEventListener\("click"/);
-  assert.match(portalHtml, /id="theme-icon" aria-hidden="true">🌙<\/span>/);
-  assert.match(portalHtml, /themeIcon\.textContent = normalizedTheme === "dark" \? "☀️" : "🌙"/);
-  assert.match(portalHtml, /window\.localStorage\.setItem\(THEME_STORAGE_KEY, normalizedTheme\)/);
-  assert.match(portalHtml, /\.topbar \{[^}]*min-height: 52px;[^}]*border-radius: 13px;/s);
+test("employee portal uses the shared admin top bar with a POST logout back to /staff", () => {
+  // The switcher, theme toggle and logout form come from admin-auth-gateway (/auth/accounts/admin-shell.*).
+  assert.match(portalHtml, /<nav class="topbar" aria-label="员工中心导航" data-admin-center="staff" data-return-to="\/staff"><\/nav>/);
+  const order = ["/auth/accounts/admin-shell.css", "/auth/accounts/admin-theme.js", "<style>", "/auth/accounts/admin-shell.js", "/auth/accounts/user-menu.js", "<nav class=\"topbar\""].map(text => portalHtml.indexOf(text));
+  assert.ok(order.every(index => index > 0), "shared shell assets and placeholder are present");
+  assert.deepEqual([...order].sort((x, y) => x - y), order, "theme before page styles; admin-shell.js before user-menu.js");
+  assert.match(portalHtml, /<script src="\/auth\/accounts\/admin-shell\.js" defer><\/script>/);
+  // No local copies left to drift from the shared shell.
+  assert.doesNotMatch(portalHtml, /center-switcher|centerSwitcher|theme-toggle|THEME_STORAGE_KEY|employee-portal-theme/);
+  assert.doesNotMatch(portalHtml, /\.topbar\s*\{/);
   assert.doesNotMatch(portalHtml, /class="hero-art"/);
 });
 
