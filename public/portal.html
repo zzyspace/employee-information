@@ -752,6 +752,7 @@ button.document-summary:hover { background:var(--brand-soft); }
             for (const [label, value, className] of [["手机号",item.phone || "未填写","record-phone"],["身份证号",item.identityCardNumber || "未识别","card-identity"]]) {
               fields.append(element("dt",label),element("dd",value,`mono ${className}`));
             }
+            fields.append(element("dt", "工作经历"), element("dd", item.workExperience || "未填写"));
             const documents = element("div", "", "compact-documents"); documents.appendChild(documentSummary(item));
             const submitted = element("time", `提交于 ${formatTableDate(item.createdAt).replace(/\n/g," ")}`, "compact-submitted"); submitted.dateTime=item.createdAt;
             card.append(top,fields,documents,submitted); cards.appendChild(card);
