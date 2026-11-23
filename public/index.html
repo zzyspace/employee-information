@@ -302,7 +302,7 @@
             <div class="badge-num">01</div>
             <div>
               <div class="section-title-row"><div class="section-title">基本信息</div></div>
-              <div class="section-subtitle">请填写与本人证件一致的信息。</div>
+              <div class="section-subtitle">请使用证件上的姓名，并如实填写其他信息。</div>
             </div>
           </header>
           <div class="field-grid">
@@ -320,6 +320,10 @@
                 <label class="choice-option"><input name="position" type="radio" value="front_of_house" required /><span>前厅</span></label>
                 <label class="choice-option"><input name="position" type="radio" value="back_of_house" required /><span>后厨</span></label>
               </div>
+            </div>
+            <div class="field">
+              <div class="field-top"><label for="work-experience">工作经历</label><span class="tag required">必填</span></div>
+              <input id="work-experience" class="input-shell" name="workExperience" type="text" placeholder="请输入上一家工作单位的名称" required />
             </div>
           </div>
         </section>
@@ -430,6 +434,7 @@
         const nameInput = document.getElementById("name");
         const phoneInput = document.getElementById("phone");
         const positionInputs = [...document.querySelectorAll('input[name="position"]')];
+        const workExperienceInput = document.getElementById("work-experience");
         const wechatConfirmed = document.getElementById("wechat-confirmed");
         const feedback = document.getElementById("form-feedback");
         const submitButton = document.getElementById("submit-button");
@@ -564,6 +569,7 @@
           if (!nameInput.value.trim()) { setFeedback("请填写姓名。"); nameInput.focus(); return; }
           if (!PHONE_PATTERN.test(phoneInput.value.trim())) { setFeedback("请输入有效的中国大陆 11 位手机号。"); phoneInput.focus(); return; }
           if (!positionInputs.some((input) => input.checked)) { setFeedback("请选择岗位。"); positionInputs[0].focus(); return; }
+          if (!workExperienceInput.value.trim()) { setFeedback("请输入上一家工作单位的名称。"); workExperienceInput.focus(); return; }
           for (const [key, label] of [["idCardFront", "身份证正面"], ["idCardBack", "身份证反面"], ["healthCertificate", ""]]) {
             const file = document.querySelector(`[data-upload-input="${key}"]`).files[0];
             const error = validateFile(file, label);

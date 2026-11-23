@@ -15,11 +15,13 @@ function ensurePositionColumns(db) {
   }
 }
 
-function ensureIdentityCardNumberColumns(db) {
+function ensureProfileTextColumns(db) {
   for (const tableName of ["employee_submissions", "employee_submission_revisions"]) {
-    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
-    if (!columns.some((column) => column.name === "identity_card_number")) {
-      db.exec(`ALTER TABLE ${tableName} ADD COLUMN identity_card_number TEXT`);
+    const columnNames = new Set(db.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name));
+    for (const columnName of ["identity_card_number", "work_experience"]) {
+      if (!columnNames.has(columnName)) {
+        db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} TEXT`);
+      }
     }
   }
 }
@@ -31,8 +33,10 @@ export function createDatabase({ dbFilePath, dbInitSqlPath }) {
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
   db.exec(fs.readFileSync(dbInitSqlPath, "utf8"));
-  if (!db.prepare('PRAGMA table_info(employee_submission_revisions)').all().some(column => column.name === 'actor_display_name')) db.exec('ALTER TABLE employee_submission_revisions ADD COLUMN actor_display_name TEXT');
-  ensurePositionColumns(db);
-  ensureIdentityCardNumberColumns(db);
+  db.transaction(() => {
+    if (!db.prepare('PRAGMA table_info(employee_submission_revisions)').all().some(column => column.name === 'actor_display_name')) db.exec('ALTER TABLE employee_submission_revisions ADD COLUMN actor_display_name TEXT');
+    ensurePositionColumns(db);
+    ensureProfileTextColumns(db);
+  }).immediate();
   return db;
 }

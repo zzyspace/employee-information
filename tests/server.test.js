@@ -24,6 +24,7 @@ import { createEmployeeSubmission } from "../server/submissions.js";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
 const VALID_ID_CARD_NUMBER = "11010519491231002X";
+const PREVIOUS_EMPLOYER = "示例咖啡店";
 
 function createTempDirectory() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "employee-information-test-"));
@@ -102,6 +103,7 @@ function validFormData({
   name = "张三",
   phone = "13800000000",
   position = "front_of_house",
+  workExperience = PREVIOUS_EMPLOYER,
   front = makeFile(jpegBytes(), "front.jpg", "image/jpeg"),
   back = makeFile(pngBytes(), "back.png", "image/png"),
   health = null,
@@ -110,6 +112,7 @@ function validFormData({
   data.set("name", name);
   data.set("phone", phone);
   data.set("position", position);
+  if (workExperience !== null) data.set("workExperience", workExperience);
   data.set("idCardFront", front);
   data.set("idCardBack", back);
   if (health) data.set("healthCertificate", health);
@@ -135,7 +138,7 @@ function listStoredFiles(root) {
     .map((entry) => entry.name);
 }
 
-test("database migration adds position columns without fabricating legacy values", () => {
+test("database migration adds profile columns without fabricating legacy values", () => {
   const tempDir = createTempDirectory();
   const dbFilePath = path.join(tempDir, "data", "app.db");
   fs.mkdirSync(path.dirname(dbFilePath), { recursive: true });
@@ -145,7 +148,8 @@ test("database migration adds position columns without fabricating legacy values
     .replaceAll(
       "  position TEXT CHECK (position IN ('front_of_house', 'back_of_house')),\n",
       ""
-    );
+    )
+    .replaceAll("  work_experience TEXT,\n", "");
   const legacyDb = new Database(dbFilePath);
   legacyDb.exec(legacySchema);
   legacyDb
@@ -171,9 +175,12 @@ test("database migration adds position columns without fabricating legacy values
     assert.ok(
       migratedDb.prepare("PRAGMA table_info(employee_submission_revisions)").all().some((column) => column.name === "identity_card_number")
     );
-    assert.equal(
-      migratedDb.prepare("SELECT position FROM employee_submissions WHERE id = ?").get("legacy-id").position,
-      null
+    assert.ok(
+      migratedDb.prepare("PRAGMA table_info(employee_submission_revisions)").all().some((column) => column.name === "work_experience")
+    );
+    assert.deepEqual(
+      migratedDb.prepare("SELECT position, work_experience FROM employee_submissions WHERE id = ?").get("legacy-id"),
+      { position: null, work_experience: null }
     );
   } finally {
     migratedDb.close();
@@ -190,6 +197,8 @@ test("only the three store routes expose the form and portal requires auth", asy
         assert.equal(response.status, 200);
         const html = await response.text();
         assert.match(html, /新员工入职信息/);
+        assert.match(html, /<label for="work-experience">工作经历<\/label><span class="tag required">必填<\/span>/);
+        assert.match(html, /<input\b[^>]*name="workExperience"[^>]*placeholder="请输入上一家工作单位的名称" required\b/);
         assert.match(html, /<nav class="topbar" aria-label="员工中心导航">/);
         assert.match(html, /id="theme-icon" aria-hidden="true">🌙<\/span>/);
         assert.match(html, /themeIcon\.textContent = normalizedTheme === "dark" \? "☀️" : "🌙"/);
@@ -307,7 +316,7 @@ test("JPG PNG HEIC HEIF and PDF are accepted only when signatures match", () => 
   assert.equal(normalizeUploadOriginalName("café.pdf"), "café.pdf");
 });
 
-test("name phone store and required document validation returns field errors", async () => {
+test("invalid basic information and missing required documents return field errors", async () => {
   const harness = createHarness();
   try {
     await withServer(harness.app, async (baseUrl) => {
@@ -322,6 +331,14 @@ test("name phone store and required document validation returns field errors", a
       const invalidPosition = await submit(baseUrl, { position: "office" });
       assert.equal(invalidPosition.status, 400);
       assert.equal((await invalidPosition.json()).error.field, "position");
+
+      for (const store of ["fuzzy", "fuzzy-qz", "peanut"]) {
+        for (const workExperience of [null, " 　"]) {
+          const missingWorkExperience = await submit(baseUrl, { workExperience }, store);
+          assert.equal(missingWorkExperience.status, 400);
+          assert.equal((await missingWorkExperience.json()).error.field, "workExperience");
+        }
+      }
 
       const missingBackData = validFormData();
       missingBackData.delete("idCardBack");
@@ -418,11 +435,13 @@ test("editing creates immutable field and attachment history, including removed 
   try {
     await withServer(harness.app, async (baseUrl) => {
       const created = await submit(baseUrl, {
+        workExperience: `  ${PREVIOUS_EMPLOYER}  `,
         health: makeFile(pdfBytes(), "health.pdf", "application/pdf"),
       });
       const id = (await created.json()).id;
       const initial = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}`, { headers: authHeaders() });
       const initialItem = (await initial.json()).item;
+      assert.equal(initialItem.workExperience, PREVIOUS_EMPLOYER);
       const oldFrontId = initialItem.attachments.idCardFront.attachmentVersionId;
       const oldHealthId = initialItem.attachments.healthCertificate.attachmentVersionId;
 
@@ -441,6 +460,7 @@ test("editing creates immutable field and attachment history, including removed 
       const updatedItem = (await updated.json()).item;
       assert.equal(updatedItem.version, 2);
       assert.equal(updatedItem.position, "back_of_house");
+      assert.equal(updatedItem.workExperience, PREVIOUS_EMPLOYER);
 
       const removeHealthData = new FormData();
       removeHealthData.set("name", "李四");
@@ -463,6 +483,7 @@ test("editing creates immutable field and attachment history, including removed 
       assert.equal(harness.db.prepare('SELECT actor_display_name FROM employee_submission_revisions WHERE submission_id=? AND version=3').get(id).actor_display_name, 'admin');
       assert.equal(harness.db.prepare('SELECT actor_display_name FROM employee_submission_revisions WHERE submission_id=? AND version=1').get(id).actor_display_name, null);
       assert.deepEqual(historyItems.map((item) => item.action), ["updated", "updated", "created"]);
+      assert.ok(historyItems.every((item) => item.workExperience === PREVIOUS_EMPLOYER));
       assert.equal(historyItems[2].name, "张三");
       assert.equal(historyItems[2].position, "front_of_house");
       assert.equal(historyItems[2].attachments.idCardFront.attachmentVersionId, oldFrontId);
@@ -515,7 +536,9 @@ test("soft deletion hides records, preserves files, blocks edits, and can restor
       assert.equal(restoredItem.version, 3);
 
       const history = await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { headers: authHeaders() });
-      assert.deepEqual((await history.json()).items.map((item) => item.action), ["restored", "deleted", "created"]);
+      const historyItems = (await history.json()).items;
+      assert.deepEqual(historyItems.map((item) => item.action), ["restored", "deleted", "created"]);
+      assert.ok(historyItems.every((item) => item.workExperience === PREVIOUS_EMPLOYER));
       assert.equal(listStoredFiles(harness.uploadsRoot).length, fileCount);
       assert.equal((await fetch(`${baseUrl}/staff/api/admin/submissions/${id}/history`, { method: "DELETE", headers: authHeaders() })).status, 404);
     });
@@ -538,7 +561,7 @@ test("uncommitted files are removed when database persistence fails", async () =
     await assert.rejects(
       () =>
         createEmployeeSubmission({
-          body: { name: "张三", phone: "13800000000", position: "front_of_house" },
+          body: { name: "张三", phone: "13800000000", position: "front_of_house", workExperience: PREVIOUS_EMPLOYER },
           files: {
             idCardFront: [{ buffer: jpegBytes(), originalname: "front.jpg", mimetype: "image/jpeg", size: jpegBytes().length }],
             idCardBack: [{ buffer: pngBytes(), originalname: "back.png", mimetype: "image/png", size: pngBytes().length }],

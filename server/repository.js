@@ -31,6 +31,7 @@ export function insertRevision(db, {
   name,
   phone,
   position,
+  workExperience,
   identityCardNumber,
   storeKey,
   idCardFrontAttachmentId,
@@ -48,6 +49,7 @@ export function insertRevision(db, {
       name,
       phone,
       position,
+      work_experience,
       identity_card_number,
       store_key,
       id_card_front_attachment_id,
@@ -56,7 +58,7 @@ export function insertRevision(db, {
       changed_at,
       actor_username,
       actor_display_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     submissionId,
     version,
@@ -64,6 +66,7 @@ export function insertRevision(db, {
     name,
     phone,
     position,
+    workExperience,
     identityCardNumber || null,
     storeKey,
     idCardFrontAttachmentId,
@@ -84,6 +87,7 @@ export function getSubmissionRow(db, submissionId) {
         name,
         phone,
         position,
+        work_experience,
         identity_card_number,
         store_key,
         current_id_card_front_attachment_id,
@@ -139,6 +143,7 @@ export function serializeSubmission(db, row) {
     name: row.name,
     phone: row.phone,
     position: row.position,
+    workExperience: row.work_experience,
     identityCardNumber: row.identity_card_number,
     storeKey: row.store_key,
     version: row.current_version,

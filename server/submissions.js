@@ -66,6 +66,10 @@ export async function createEmployeeSubmission({
   generateId = () => crypto.randomUUID(),
 }) {
   const payload = validateEmployeePayload(normalizeEmployeePayload(body, storeKey));
+  const workExperience = normalizeString(body?.workExperience);
+  if (!workExperience) {
+    throw new SubmissionValidationError("请输入上一家工作单位的名称。", "workExperience");
+  }
   const idCardFront = getSingleUploadedFile(files, "idCardFront");
   const idCardBack = getSingleUploadedFile(files, "idCardBack");
   const healthCertificate = getSingleUploadedFile(files, "healthCertificate");
@@ -144,14 +148,15 @@ export async function createEmployeeSubmission({
     db.transaction(() => {
       db.prepare(
         `INSERT INTO employee_submissions (
-          id, name, phone, position, identity_card_number, store_key,
+          id, name, phone, position, work_experience, identity_card_number, store_key,
           current_version, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
       ).run(
         submissionId,
         payload.name,
         payload.phone,
         payload.position,
+        workExperience,
         identityCardNumber,
         payload.storeKey,
         createdAt,
@@ -182,6 +187,7 @@ export async function createEmployeeSubmission({
         version: 1,
         action: "created",
         ...payload,
+        workExperience,
         identityCardNumber,
         idCardFrontAttachmentId: byKind.id_card_front.attachmentVersionId,
         idCardBackAttachmentId: byKind.id_card_back.attachmentVersionId,
